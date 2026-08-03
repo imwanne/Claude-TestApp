@@ -126,9 +126,29 @@ function computeSuggest(cycleIdx, roundIdx) {
   return roundsLeft > 0 ? Math.ceil(remaining / roundsLeft) : 0;
 }
 
+function updateRestStats() {
+  var phase = runSeq[runIndex];
+  if (!phase || phase.name !== 'REST' || !phase.cycle) return;
+  var cd = sessionCycleData[phase.cycle - 1];
+  var summaryEl = document.getElementById('run-rest-summary');
+  if (!cd || !cd.targetReps) { summaryEl.classList.add('hidden'); return; }
+  summaryEl.classList.remove('hidden');
+  var prev = cd.roundReps.reduce(function(a,b){return a+b;}, 0);
+  var total = prev + currentRepInputVal;
+  var target = cd.targetReps;
+  var pct = Math.round((total / target) * 100);
+  var pctCls = pct >= 100 ? 'pct-great' : pct >= 80 ? 'pct-good' : 'pct-low';
+  document.getElementById('run-rest-prev').textContent = prev + ' reps';
+  document.getElementById('run-rest-progress').textContent = total + ' / ' + target + ' reps';
+  var pctEl = document.getElementById('run-rest-pct');
+  pctEl.textContent = pct + '%';
+  pctEl.className = 'rest-stat-pct ' + pctCls;
+}
+
 function changeRepInput(delta) {
   currentRepInputVal = Math.max(0, currentRepInputVal + delta);
   document.getElementById('run-rep-val').textContent = currentRepInputVal;
+  updateRestStats();
 }
 
 function startWorkoutRun(workout) {
@@ -150,6 +170,7 @@ function startWorkoutRun(workout) {
   document.getElementById('run-cycle-name').classList.add('hidden');
   document.getElementById('run-work-panel').classList.add('hidden');
   document.getElementById('run-rest-panel').classList.add('hidden');
+  document.getElementById('run-rest-summary').classList.add('hidden');
   document.getElementById('screen-workout-run').style.background = '';
   show('screen-workout-run');
   var first = runSeq[0];
@@ -210,7 +231,7 @@ function updateRunDisplay() {
   var isWork = phase.name === 'WORK';
   var isRest = phase.name === 'REST';
 
-  // Cycle name (visible during WORK and REST)
+  // Cycle name — visible during WORK and REST
   var cycleName = '';
   if ((isWork || isRest) && phase.cycle > 0) {
     var cd0 = sessionCycleData[phase.cycle - 1];
@@ -220,7 +241,7 @@ function updateRunDisplay() {
   cycleNameEl.textContent = cycleName;
   cycleNameEl.classList.toggle('hidden', !cycleName);
 
-  // WORK panel: reps suggestion + remaining
+  // WORK panel: suggestion + remaining to target
   var workPanel = document.getElementById('run-work-panel');
   workPanel.classList.toggle('hidden', !isWork);
   if (isWork && phase.cycle > 0) {
@@ -233,11 +254,12 @@ function updateRunDisplay() {
     document.getElementById('run-remaining').textContent = remaining !== null ? remaining : '—';
   }
 
-  // REST panel: rep stepper
+  // REST panel: stepper + running stats toward cycle goal
   var restPanel = document.getElementById('run-rest-panel');
   restPanel.classList.toggle('hidden', !isRest);
   if (isRest) {
     document.getElementById('run-rep-val').textContent = currentRepInputVal;
+    updateRestStats();
   }
 }
 

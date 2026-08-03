@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Timer App</title>
   <link rel="stylesheet" href="style.css?v=6" />
@@ -155,6 +155,17 @@
           <button class="rep-btn" onclick="changeRepInput(-1)">−</button>
           <span id="run-rep-val" class="rep-val">0</span>
           <button class="rep-btn" onclick="changeRepInput(1)">+</button>
+        </div>
+        <div id="run-rest-summary" class="rest-summary hidden">
+          <div class="rest-stat-row">
+            <span class="rest-stat-label">Précédents</span>
+            <span id="run-rest-prev" class="rest-stat-val">0 reps</span>
+          </div>
+          <div class="rest-stat-row rest-stat-total">
+            <span class="rest-stat-label">Total / Objectif</span>
+            <span id="run-rest-progress" class="rest-stat-progress">—</span>
+            <span id="run-rest-pct" class="rest-stat-pct">—</span>
+          </div>
         </div>
       </div>
 
