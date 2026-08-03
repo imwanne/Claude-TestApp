@@ -15,7 +15,7 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 function calcTotalDuration(w) {
   var nWork = w.cycles * w.rounds;
-  var nRest = nWork; // REST after every WORK
+  var nRest = nWork;
   var nBetween = Math.max(0, w.cycles - 1);
   return w.prepare + nWork * w.work + nRest * w.rest + nBetween * w.restBetweenCycles + w.cooldown;
 }
@@ -171,6 +171,7 @@ function startWorkoutRun(workout) {
   document.getElementById('run-work-panel').classList.add('hidden');
   document.getElementById('run-rest-panel').classList.add('hidden');
   document.getElementById('run-rest-summary').classList.add('hidden');
+  document.getElementById('run-between-panel').classList.add('hidden');
   document.getElementById('screen-workout-run').style.background = '';
   show('screen-workout-run');
   var first = runSeq[0];
@@ -230,6 +231,7 @@ function updateRunDisplay() {
 
   var isWork = phase.name === 'WORK';
   var isRest = phase.name === 'REST';
+  var isBetween = phase.name === 'REST BETWEEN CYCLES';
 
   // Cycle name — visible during WORK and REST
   var cycleName = '';
@@ -254,12 +256,38 @@ function updateRunDisplay() {
     document.getElementById('run-remaining').textContent = remaining !== null ? remaining : '—';
   }
 
-  // REST panel: stepper + running stats toward cycle goal
+  // REST panel: stepper + live progress toward cycle goal
   var restPanel = document.getElementById('run-rest-panel');
   restPanel.classList.toggle('hidden', !isRest);
   if (isRest) {
     document.getElementById('run-rep-val').textContent = currentRepInputVal;
     updateRestStats();
+  }
+
+  // REST BETWEEN CYCLES panel: summary of just-finished cycle
+  var betweenPanel = document.getElementById('run-between-panel');
+  betweenPanel.classList.toggle('hidden', !isBetween);
+  if (isBetween && phase.cycle > 0) {
+    var cdB = sessionCycleData[phase.cycle - 1];
+    var actual = cdB ? cdB.roundReps.reduce(function(a,b){return a+b;}, 0) : 0;
+    var target = cdB ? cdB.targetReps : 0;
+    document.getElementById('run-between-label').textContent = 'Cycle ' + phase.cycle + ' terminé';
+    var nameEl = document.getElementById('run-between-name');
+    nameEl.textContent = cdB ? (cdB.name || '') : '';
+    nameEl.classList.toggle('hidden', !cdB || !cdB.name);
+    var progEl = document.getElementById('run-between-progress');
+    var pctEl = document.getElementById('run-between-pct');
+    if (target > 0) {
+      var pct = Math.round((actual / target) * 100);
+      var pctCls = pct >= 100 ? 'pct-great' : pct >= 80 ? 'pct-good' : 'pct-low';
+      progEl.textContent = actual + ' / ' + target + ' reps';
+      pctEl.textContent = pct + '%';
+      pctEl.className = 'rest-stat-pct ' + pctCls;
+    } else {
+      progEl.textContent = actual + ' reps';
+      pctEl.textContent = '';
+      pctEl.className = 'rest-stat-pct';
+    }
   }
 }
 
