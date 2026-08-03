@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Timer App</title>
+  <link rel="stylesheet" href="style.css?v=3" />
+</head>
+<body>
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="home-hero">
+      <h1>Timer App</h1>
+      <p class="home-sub">Choose a mode</p>
+    </div>
+    <div class="home-grid">
+      <button class="home-card" onclick="show('screen-countdown')">
+        <svg class="home-icon" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="26" r="16" stroke="currentColor" stroke-width="3"/>
+          <path d="M24 16v10l6 4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M19 8h10M24 8v4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <span class="home-card-label">Countdown</span>
+      </button>
+      <button class="home-card accent-sport" onclick="show('screen-sport-home')">
+        <svg class="home-icon" viewBox="0 0 48 48" fill="none">
+          <path d="M28 6L14 26h12l-6 16 20-22H28L34 6z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        </svg>
+        <span class="home-card-label">Sport</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div id="screen-countdown" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="stopCountdown(); show('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <span class="nav-title">Countdown</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div id="countdown-setup" class="card">
+        <label for="target-date">Set target date &amp; time</label>
+        <input type="datetime-local" id="target-date" />
+        <p id="error-message" class="error" aria-live="polite"></p>
+        <button id="start-btn" class="btn-primary">Start Countdown</button>
+      </div>
+      <div id="countdown-running" class="card hidden">
+        <p class="phase-label">Counting down to</p>
+        <p id="target-display" class="target-display"></p>
+        <div class="countdown-display">
+          <div class="unit"><span id="days">00</span><small>Days</small></div>
+          <div class="sep">:</div>
+          <div class="unit"><span id="hours">00</span><small>Hours</small></div>
+          <div class="sep">:</div>
+          <div class="unit"><span id="minutes">00</span><small>Minutes</small></div>
+          <div class="sep">:</div>
+          <div class="unit"><span id="seconds">00</span><small>Seconds</small></div>
+        </div>
+        <p id="finished-message" class="finished hidden">Time's up!</p>
+        <button id="stop-countdown-btn" class="btn-danger">Stop</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPORT HOME -->
+  <div id="screen-sport-home" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="show('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <span class="nav-title">Sport</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div class="sport-grid">
+        <button class="sport-card" onclick="show('screen-tabata-setup')">
+          <div class="sport-card-icon" style="background:#22c55e22; color:#22c55e">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="4" y="10" width="24" height="18" rx="3"/>
+              <path d="M10 10V7a6 6 0 0112 0v3"/>
+              <path d="M16 17v4"/>
+            </svg>
+          </div>
+          <span class="sport-card-label">Tabata</span>
+          <span class="sport-card-sub">Interval training</span>
+        </button>
+        <button class="sport-card" onclick="show('screen-chrono')">
+          <div class="sport-card-icon" style="background:#6366f122; color:#6366f1">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="16" cy="18" r="11"/>
+              <path d="M16 10V7M13 5h6"/>
+              <path d="M16 18l5-5"/>
+            </svg>
+          </div>
+          <span class="sport-card-label">Chrono</span>
+          <span class="sport-card-sub">Stopwatch &amp; laps</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABATA SETUP -->
+  <div id="screen-tabata-setup" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="show('screen-sport-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <span class="nav-title">Tabata</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div class="param-list">
+
+        <div class="param-section-title">INTERVALS</div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#eab308"></div>
+          <div class="param-info">
+            <span class="param-name">Prepare</span>
+            <span class="param-desc">Countdown before you start</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('prepare', -5)">−</button>
+            <span class="param-val" id="val-prepare">:15</span>
+            <button class="ctrl-btn" onclick="adjustParam('prepare', 5)">+</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#22c55e"></div>
+          <div class="param-info">
+            <span class="param-name">Work</span>
+            <span class="param-desc">Do exercises for this long</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('work', -5)">−</button>
+            <span class="param-val" id="val-work">01:00</span>
+            <button class="ctrl-btn" onclick="adjustParam('work', 5)">+</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#ef4444"></div>
+          <div class="param-info">
+            <span class="param-name">Rest</span>
+            <span class="param-desc">Rest for this long</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('rest', -5)">−</button>
+            <span class="param-val" id="val-rest">:30</span>
+            <button class="ctrl-btn" onclick="adjustParam('rest', 5)">+</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#3b82f6"></div>
+          <div class="param-info">
+            <span class="param-name">Rounds</span>
+            <span class="param-desc">One round is Work + Rest</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('rounds', -1)">−</button>
+            <span class="param-val" id="val-rounds">3</span>
+            <button class="ctrl-btn" onclick="adjustParam('rounds', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#eab308"></div>
+          <div class="param-info">
+            <span class="param-name">Cycles</span>
+            <span class="param-desc">One cycle is <span id="cycles-rounds-label">3</span> rounds</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('cycles', -1)">−</button>
+            <span class="param-val" id="val-cycles">1</span>
+            <button class="ctrl-btn" onclick="adjustParam('cycles', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#eab308"></div>
+          <div class="param-info">
+            <span class="param-name">Rest Between Cycles</span>
+            <span class="param-desc">Recovery interval</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('restBetweenCycles', -5)">−</button>
+            <span class="param-val" id="val-restBetweenCycles">02:00</span>
+            <button class="ctrl-btn" onclick="adjustParam('restBetweenCycles', 5)">+</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-dot" style="background:#3b82f6"></div>
+          <div class="param-info">
+            <span class="param-name">Cooldown</span>
+            <span class="param-desc">Cooldown after workout</span>
+          </div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustParam('cooldown', -5)">−</button>
+            <span class="param-val" id="val-cooldown">02:30</span>
+            <button class="ctrl-btn" onclick="adjustParam('cooldown', 5)">+</button>
+          </div>
+        </div>
+
+      </div>
+      <button class="btn-primary btn-full btn-large" onclick="startTabata()">Start</button>
+    </div>
+  </div>
+
+  <!-- TABATA RUNNING -->
+  <div id="screen-tabata-running" class="screen tabata-running-screen">
+    <div class="tabata-running-body">
+      <div id="tabata-phase-badge" class="phase-badge">PREPARE</div>
+      <div id="tabata-timer" class="tabata-timer">00:15</div>
+      <div id="tabata-progress" class="tabata-progress"></div>
+      <button class="btn-danger btn-large" onclick="stopTabata()">Stop</button>
+    </div>
+  </div>
+
+  <!-- CHRONO -->
+  <div id="screen-chrono" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="resetChrono(); show('screen-sport-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <span class="nav-title">Chrono</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body chrono-body">
+      <div id="chrono-display" class="chrono-display">00:00.00</div>
+      <div class="chrono-btns">
+        <button id="chrono-lap-btn" class="btn-secondary" onclick="chronoLap()" disabled>Lap</button>
+        <button id="chrono-start-btn" class="btn-primary" onclick="toggleChrono()">Start</button>
+        <button id="chrono-reset-btn" class="btn-secondary" onclick="resetChrono()" disabled>Reset</button>
+      </div>
+      <ul id="chrono-laps" class="laps-list"></ul>
+    </div>
+  </div>
+
+  <script src="app.js?v=3"></script>
+</body>
+</html>
