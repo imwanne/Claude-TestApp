@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Timer App</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
@@ -37,9 +37,7 @@
   <div id="screen-countdown" class="screen">
     <div class="nav-bar">
       <button class="back-btn" onclick="stopCountdown(); show('screen-home')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <span class="nav-title">Countdown</span>
       <span class="nav-spacer"></span>
@@ -49,7 +47,7 @@
         <label for="target-date">Set target date &amp; time</label>
         <input type="datetime-local" id="target-date" />
         <p id="error-message" class="error" aria-live="polite"></p>
-        <button id="start-btn" class="btn-primary">Start Countdown</button>
+        <button id="start-btn" class="btn-primary btn-full">Start Countdown</button>
       </div>
       <div id="countdown-running" class="card hidden">
         <p class="phase-label">Counting down to</p>
@@ -64,7 +62,7 @@
           <div class="unit"><span id="seconds">00</span><small>Seconds</small></div>
         </div>
         <p id="finished-message" class="finished hidden">Time's up!</p>
-        <button id="stop-countdown-btn" class="btn-danger">Stop</button>
+        <button id="stop-countdown-btn" class="btn-danger btn-full">Stop</button>
       </div>
     </div>
   </div>
@@ -73,9 +71,7 @@
   <div id="screen-sport-home" class="screen">
     <div class="nav-bar">
       <button class="back-btn" onclick="show('screen-home')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <span class="nav-title">Sport</span>
       <span class="nav-spacer"></span>
@@ -83,26 +79,39 @@
     <div class="screen-body">
       <div class="sport-grid">
         <button class="sport-card" onclick="show('screen-tabata-setup')">
-          <div class="sport-card-icon" style="background:#22c55e22; color:#22c55e">
+          <div class="sport-card-icon" style="background:#22c55e18;color:#22c55e">
             <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <rect x="4" y="10" width="24" height="18" rx="3"/>
-              <path d="M10 10V7a6 6 0 0112 0v3"/>
-              <path d="M16 17v4"/>
+              <path d="M10 10V7a6 6 0 0112 0v3"/><path d="M16 17v4"/>
             </svg>
           </div>
-          <span class="sport-card-label">Tabata</span>
-          <span class="sport-card-sub">Interval training</span>
+          <div class="sport-card-text">
+            <span class="sport-card-label">Tabata</span>
+            <span class="sport-card-sub">Interval training</span>
+          </div>
         </button>
         <button class="sport-card" onclick="show('screen-chrono')">
-          <div class="sport-card-icon" style="background:#6366f122; color:#6366f1">
+          <div class="sport-card-icon" style="background:#6366f118;color:#6366f1">
             <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <circle cx="16" cy="18" r="11"/>
-              <path d="M16 10V7M13 5h6"/>
-              <path d="M16 18l5-5"/>
+              <circle cx="16" cy="18" r="11"/><path d="M16 10V7M13 5h6"/><path d="M16 18l5-5"/>
             </svg>
           </div>
-          <span class="sport-card-label">Chrono</span>
-          <span class="sport-card-sub">Stopwatch &amp; laps</span>
+          <div class="sport-card-text">
+            <span class="sport-card-label">Chrono</span>
+            <span class="sport-card-sub">Stopwatch &amp; laps</span>
+          </div>
+        </button>
+        <button class="sport-card" onclick="showWorkouts()">
+          <div class="sport-card-icon" style="background:#f59e0b18;color:#f59e0b">
+            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M6 8h20M6 14h20M6 20h12"/>
+              <circle cx="24" cy="23" r="5"/><path d="M24 21v2l1.5 1"/>
+            </svg>
+          </div>
+          <div class="sport-card-text">
+            <span class="sport-card-label">My Workouts</span>
+            <span class="sport-card-sub">Saved programs</span>
+          </div>
         </button>
       </div>
     </div>
@@ -112,109 +121,77 @@
   <div id="screen-tabata-setup" class="screen">
     <div class="nav-bar">
       <button class="back-btn" onclick="show('screen-sport-home')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <span class="nav-title">Tabata</span>
-      <span class="nav-spacer"></span>
+      <button class="nav-text-btn" onclick="openSaveWorkout()">Save</button>
     </div>
     <div class="screen-body">
       <div class="param-list">
-
         <div class="param-section-title">INTERVALS</div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#eab308"></div>
-          <div class="param-info">
-            <span class="param-name">Prepare</span>
-            <span class="param-desc">Countdown before you start</span>
-          </div>
+          <div class="param-info"><span class="param-name">Prepare</span><span class="param-desc">Countdown before you start</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('prepare', -5)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('prepare',-5)">−</button>
             <span class="param-val" id="val-prepare">:15</span>
-            <button class="ctrl-btn" onclick="adjustParam('prepare', 5)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('prepare',5)">+</button>
           </div>
         </div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#22c55e"></div>
-          <div class="param-info">
-            <span class="param-name">Work</span>
-            <span class="param-desc">Do exercises for this long</span>
-          </div>
+          <div class="param-info"><span class="param-name">Work</span><span class="param-desc">Do exercises for this long</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('work', -5)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('work',-5)">−</button>
             <span class="param-val" id="val-work">01:00</span>
-            <button class="ctrl-btn" onclick="adjustParam('work', 5)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('work',5)">+</button>
           </div>
         </div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#ef4444"></div>
-          <div class="param-info">
-            <span class="param-name">Rest</span>
-            <span class="param-desc">Rest for this long</span>
-          </div>
+          <div class="param-info"><span class="param-name">Rest</span><span class="param-desc">Rest for this long</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('rest', -5)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('rest',-5)">−</button>
             <span class="param-val" id="val-rest">:30</span>
-            <button class="ctrl-btn" onclick="adjustParam('rest', 5)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('rest',5)">+</button>
           </div>
         </div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#3b82f6"></div>
-          <div class="param-info">
-            <span class="param-name">Rounds</span>
-            <span class="param-desc">One round is Work + Rest</span>
-          </div>
+          <div class="param-info"><span class="param-name">Rounds</span><span class="param-desc">One round is Work + Rest</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('rounds', -1)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('rounds',-1)">−</button>
             <span class="param-val" id="val-rounds">3</span>
-            <button class="ctrl-btn" onclick="adjustParam('rounds', 1)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('rounds',1)">+</button>
           </div>
         </div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#eab308"></div>
-          <div class="param-info">
-            <span class="param-name">Cycles</span>
-            <span class="param-desc">One cycle is <span id="cycles-rounds-label">3</span> rounds</span>
-          </div>
+          <div class="param-info"><span class="param-name">Cycles</span><span class="param-desc">One cycle is <span id="cycles-rounds-label">3</span> rounds</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('cycles', -1)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('cycles',-1)">−</button>
             <span class="param-val" id="val-cycles">1</span>
-            <button class="ctrl-btn" onclick="adjustParam('cycles', 1)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('cycles',1)">+</button>
           </div>
         </div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#eab308"></div>
-          <div class="param-info">
-            <span class="param-name">Rest Between Cycles</span>
-            <span class="param-desc">Recovery interval</span>
-          </div>
+          <div class="param-info"><span class="param-name">Rest Between Cycles</span><span class="param-desc">Recovery interval</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('restBetweenCycles', -5)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('restBetweenCycles',-5)">−</button>
             <span class="param-val" id="val-restBetweenCycles">02:00</span>
-            <button class="ctrl-btn" onclick="adjustParam('restBetweenCycles', 5)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('restBetweenCycles',5)">+</button>
           </div>
         </div>
-
         <div class="param-row">
           <div class="param-dot" style="background:#3b82f6"></div>
-          <div class="param-info">
-            <span class="param-name">Cooldown</span>
-            <span class="param-desc">Cooldown after workout</span>
-          </div>
+          <div class="param-info"><span class="param-name">Cooldown</span><span class="param-desc">Cooldown after workout</span></div>
           <div class="param-ctrl">
-            <button class="ctrl-btn" onclick="adjustParam('cooldown', -5)">−</button>
+            <button class="ctrl-btn" onclick="adjustParam('cooldown',-5)">−</button>
             <span class="param-val" id="val-cooldown">02:30</span>
-            <button class="ctrl-btn" onclick="adjustParam('cooldown', 5)">+</button>
+            <button class="ctrl-btn" onclick="adjustParam('cooldown',5)">+</button>
           </div>
         </div>
-
       </div>
       <button class="btn-primary btn-full btn-large" onclick="startTabata()">Start</button>
     </div>
@@ -226,7 +203,10 @@
       <div id="tabata-phase-badge" class="phase-badge">PREPARE</div>
       <div id="tabata-timer" class="tabata-timer">00:15</div>
       <div id="tabata-progress" class="tabata-progress"></div>
-      <button class="btn-danger btn-large" onclick="stopTabata()">Stop</button>
+      <div class="tabata-actions">
+        <button class="btn-secondary btn-large" onclick="skipTabataPhase()">Skip</button>
+        <button class="btn-danger btn-large" onclick="stopTabata()">Stop</button>
+      </div>
     </div>
   </div>
 
@@ -234,9 +214,7 @@
   <div id="screen-chrono" class="screen">
     <div class="nav-bar">
       <button class="back-btn" onclick="resetChrono(); show('screen-sport-home')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <span class="nav-title">Chrono</span>
       <span class="nav-spacer"></span>
@@ -252,6 +230,114 @@
     </div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <!-- MY WORKOUTS -->
+  <div id="screen-workouts" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="show('screen-sport-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="nav-title">My Workouts</span>
+      <button class="nav-text-btn accent" onclick="openWorkoutEdit(null,'screen-workouts')">+ New</button>
+    </div>
+    <div class="screen-body">
+      <div id="workouts-empty" class="empty-state hidden">
+        <p>No workouts saved yet.</p>
+        <button class="btn-primary" style="margin-top:1rem" onclick="openWorkoutEdit(null,'screen-workouts')">Create your first workout</button>
+      </div>
+      <ul id="workouts-list" class="workouts-list"></ul>
+    </div>
+  </div>
+
+  <!-- WORKOUT EDIT / CREATE -->
+  <div id="screen-workout-edit" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="cancelWorkoutEdit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="nav-title" id="workout-edit-title">New Workout</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div class="form-card">
+        <div class="form-group">
+          <label for="workout-name">Name</label>
+          <input type="text" id="workout-name" placeholder="e.g. Morning HIIT" maxlength="40" />
+        </div>
+        <div class="form-group">
+          <label for="workout-description">Description</label>
+          <textarea id="workout-description" placeholder="Optional notes..." rows="2"></textarea>
+        </div>
+      </div>
+      <div class="param-list">
+        <div class="param-section-title">INTERVALS</div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#eab308"></div>
+          <div class="param-info"><span class="param-name">Prepare</span><span class="param-desc">Countdown before you start</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('prepare',-5)">−</button>
+            <span class="param-val" id="we-val-prepare">:15</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('prepare',5)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#22c55e"></div>
+          <div class="param-info"><span class="param-name">Work</span><span class="param-desc">Do exercises for this long</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('work',-5)">−</button>
+            <span class="param-val" id="we-val-work">01:00</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('work',5)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#ef4444"></div>
+          <div class="param-info"><span class="param-name">Rest</span><span class="param-desc">Rest for this long</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('rest',-5)">−</button>
+            <span class="param-val" id="we-val-rest">:30</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('rest',5)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#3b82f6"></div>
+          <div class="param-info"><span class="param-name">Rounds</span><span class="param-desc">One round is Work + Rest</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('rounds',-1)">−</button>
+            <span class="param-val" id="we-val-rounds">3</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('rounds',1)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#eab308"></div>
+          <div class="param-info"><span class="param-name">Cycles</span><span class="param-desc">One cycle is N rounds</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('cycles',-1)">−</button>
+            <span class="param-val" id="we-val-cycles">1</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('cycles',1)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#eab308"></div>
+          <div class="param-info"><span class="param-name">Rest Between Cycles</span><span class="param-desc">Recovery interval</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('restBetweenCycles',-5)">−</button>
+            <span class="param-val" id="we-val-restBetweenCycles">02:00</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('restBetweenCycles',5)">+</button>
+          </div>
+        </div>
+        <div class="param-row">
+          <div class="param-dot" style="background:#3b82f6"></div>
+          <div class="param-info"><span class="param-name">Cooldown</span><span class="param-desc">Cooldown after workout</span></div>
+          <div class="param-ctrl">
+            <button class="ctrl-btn" onclick="adjustEditParam('cooldown',-5)">−</button>
+            <span class="param-val" id="we-val-cooldown">02:30</span>
+            <button class="ctrl-btn" onclick="adjustEditParam('cooldown',5)">+</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary btn-full btn-large" onclick="saveWorkout()">Save Workout</button>
+    </div>
+  </div>
+
+  <script src="app.js?v=4"></script>
 </body>
 </html>
