@@ -129,10 +129,24 @@ body {
 
 /* WORKOUT RUNNING */
 #screen-workout-run { align-items: center; justify-content: center; transition: background 0.4s; position: relative; }
-.tabata-running-body { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; padding: 2rem 1.5rem; width: 100%; max-width: 380px; }
+.run-body { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; padding: 2rem 1.5rem; width: 100%; max-width: 380px; }
 .phase-badge { padding: 0.45rem 1.5rem; border-radius: 100px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; color: #fff; background: #64748b; transition: background 0.3s; }
+.run-cycle-name { font-size: 1.1rem; font-weight: 600; color: #a5b4fc; text-align: center; letter-spacing: 0.01em; }
 .tabata-timer { font-size: clamp(4.5rem, 22vw, 7rem); font-weight: 700; font-variant-numeric: tabular-nums; color: #f8fafc; line-height: 1; }
 .tabata-progress { font-size: 0.85rem; color: #94a3b8; min-height: 1.2em; text-align: center; }
+
+/* Run panels */
+.run-panel { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 1rem 1.25rem; width: 100%; }
+.rp-row { display: flex; align-items: center; justify-content: space-between; }
+.rp-row--dim { margin-top: 0.6rem; opacity: 0.65; }
+.rp-label { font-size: 0.82rem; color: #94a3b8; font-weight: 500; }
+.rp-big { font-size: 1.9rem; font-weight: 700; color: #f8fafc; font-variant-numeric: tabular-nums; }
+.rp-val { font-size: 1rem; font-weight: 600; color: #f1f5f9; font-variant-numeric: tabular-nums; }
+.rep-stepper { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-top: 0.75rem; }
+.rep-btn { width: 52px; height: 52px; border-radius: 50%; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1.6rem; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rep-btn:active { background: #1e293b; color: #f8fafc; }
+.rep-val { font-size: 2.5rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #f8fafc; min-width: 60px; text-align: center; }
+
 .tabata-actions { display: flex; gap: 0.75rem; width: 100%; }
 .tabata-actions .btn-secondary { flex: 1; }
 .tabata-actions .btn-danger { flex: 2; }

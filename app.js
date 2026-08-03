@@ -15,7 +15,7 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 function calcTotalDuration(w) {
   var nWork = w.cycles * w.rounds;
-  var nRest = Math.max(0, nWork - 1);
+  var nRest = nWork; // REST after every WORK
   var nBetween = Math.max(0, w.cycles - 1);
   return w.prepare + nWork * w.work + nRest * w.rest + nBetween * w.restBetweenCycles + w.cooldown;
 }
@@ -101,20 +101,35 @@ function buildWorkoutSequence(w) {
     seq.push({name:'__CYCLE_START__', cycle:c, duration:0});
     for (var r = 1; r <= w.rounds; r++) {
       seq.push({name:'WORK', color:'#22c55e', duration:w.work, round:r, cycle:c});
-      if (!(c === w.cycles && r === w.rounds)) seq.push({name:'REST', color:'#ef4444', duration:w.rest, round:r, cycle:c});
+      seq.push({name:'REST', color:'#ef4444', duration:w.rest, round:r, cycle:c});
     }
-    seq.push({name:'__CYCLE_END__', cycle:c, duration:0});
     if (c < w.cycles) seq.push({name:'REST BETWEEN CYCLES', color:'#eab308', duration:w.restBetweenCycles, round:0, cycle:c});
   }
   seq.push({name:'COOLDOWN', color:'#3b82f6', duration:w.cooldown, round:0, cycle:0});
   return seq;
 }
 
-// WORKOUT RUN
+// WORKOUT RUN STATE
 var currentWorkout = null;
 var sessionCycleData = [];
 var runSeq = [], runIndex = 0, runRemaining = 0, runInterval = null;
 var pendingCycleNum = 0;
+var currentRepInputVal = 0;
+var lastWorkSuggest = 0;
+
+function computeSuggest(cycleIdx, roundIdx) {
+  var cd = sessionCycleData[cycleIdx];
+  if (!cd || !cd.targetReps) return 0;
+  var done = cd.roundReps.reduce(function(a,b){return a+b;}, 0);
+  var remaining = Math.max(0, cd.targetReps - done);
+  var roundsLeft = currentWorkout.rounds - roundIdx;
+  return roundsLeft > 0 ? Math.ceil(remaining / roundsLeft) : 0;
+}
+
+function changeRepInput(delta) {
+  currentRepInputVal = Math.max(0, currentRepInputVal + delta);
+  document.getElementById('run-rep-val').textContent = currentRepInputVal;
+}
 
 function startWorkoutRun(workout) {
   currentWorkout = workout;
@@ -123,15 +138,18 @@ function startWorkoutRun(workout) {
     sessionCycleData.push({
       name: (workout.cycleNames && workout.cycleNames[i]) || '',
       targetReps: (workout.cycleTargetReps && workout.cycleTargetReps[i]) || 0,
-      actualReps: 0
+      roundReps: []
     });
   }
   runSeq = buildWorkoutSequence(workout);
   runIndex = 0; runRemaining = 0;
+  currentRepInputVal = 0; lastWorkSuggest = 0;
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
-  document.getElementById('overlay-cycle-end').classList.add('hidden');
   document.getElementById('overlay-workout-done').classList.add('hidden');
+  document.getElementById('run-cycle-name').classList.add('hidden');
+  document.getElementById('run-work-panel').classList.add('hidden');
+  document.getElementById('run-rest-panel').classList.add('hidden');
   document.getElementById('screen-workout-run').style.background = '';
   show('screen-workout-run');
   var first = runSeq[0];
@@ -145,8 +163,10 @@ function processCurrentPhase() {
   if (runIndex >= runSeq.length) { showWorkoutDone(); return false; }
   var phase = runSeq[runIndex];
   if (phase.name === '__CYCLE_START__') { showCycleStartOverlay(phase.cycle); return false; }
-  if (phase.name === '__CYCLE_END__') { showCycleEndOverlay(phase.cycle); return false; }
   runRemaining = phase.duration;
+  if (phase.name === 'REST') {
+    currentRepInputVal = lastWorkSuggest;
+  }
   playPhaseSound(phase.name);
   vib([100, 50, 100]);
   updateRunDisplay();
@@ -154,6 +174,11 @@ function processCurrentPhase() {
 }
 
 function advancePhase() {
+  var leaving = runSeq[runIndex];
+  if (leaving && leaving.name === 'REST' && leaving.round > 0 && leaving.cycle > 0) {
+    var cd = sessionCycleData[leaving.cycle - 1];
+    if (cd) cd.roundReps.push(currentRepInputVal);
+  }
   runIndex++;
   return processCurrentPhase();
 }
@@ -173,12 +198,47 @@ function runTick() {
 function updateRunDisplay() {
   var phase = runSeq[runIndex];
   if (!phase || phase.name.indexOf('__') === 0) return;
+
   var badge = document.getElementById('run-phase-badge');
-  badge.textContent = phase.name; badge.style.background = phase.color;
+  badge.textContent = phase.name;
+  badge.style.background = phase.color || '#64748b';
   document.getElementById('run-timer').textContent = formatMmSs(runRemaining);
   document.getElementById('run-progress').textContent = phase.round > 0
     ? 'Round ' + phase.round + ' / ' + currentWorkout.rounds + '  ·  Cycle ' + phase.cycle + ' / ' + currentWorkout.cycles : '';
-  document.getElementById('screen-workout-run').style.background = phase.color + '14';
+  document.getElementById('screen-workout-run').style.background = (phase.color || '#64748b') + '14';
+
+  var isWork = phase.name === 'WORK';
+  var isRest = phase.name === 'REST';
+
+  // Cycle name (visible during WORK and REST)
+  var cycleName = '';
+  if ((isWork || isRest) && phase.cycle > 0) {
+    var cd0 = sessionCycleData[phase.cycle - 1];
+    cycleName = cd0 ? (cd0.name || '') : '';
+  }
+  var cycleNameEl = document.getElementById('run-cycle-name');
+  cycleNameEl.textContent = cycleName;
+  cycleNameEl.classList.toggle('hidden', !cycleName);
+
+  // WORK panel: reps suggestion + remaining
+  var workPanel = document.getElementById('run-work-panel');
+  workPanel.classList.toggle('hidden', !isWork);
+  if (isWork && phase.cycle > 0) {
+    var cd = sessionCycleData[phase.cycle - 1];
+    var suggest = computeSuggest(phase.cycle - 1, phase.round - 1);
+    lastWorkSuggest = suggest;
+    var done = cd ? cd.roundReps.reduce(function(a,b){return a+b;}, 0) : 0;
+    var remaining = (cd && cd.targetReps) ? Math.max(0, cd.targetReps - done) : null;
+    document.getElementById('run-suggest').textContent = suggest > 0 ? suggest : '—';
+    document.getElementById('run-remaining').textContent = remaining !== null ? remaining : '—';
+  }
+
+  // REST panel: rep stepper
+  var restPanel = document.getElementById('run-rest-panel');
+  restPanel.classList.toggle('hidden', !isRest);
+  if (isRest) {
+    document.getElementById('run-rep-val').textContent = currentRepInputVal;
+  }
 }
 
 function showCycleStartOverlay(cycleNum) {
@@ -198,24 +258,6 @@ function confirmCycleStart() {
   if (go) runInterval = setInterval(runTick, 1000);
 }
 
-function showCycleEndOverlay(cycleNum) {
-  pendingCycleNum = cycleNum;
-  var cd = sessionCycleData[cycleNum - 1];
-  document.getElementById('ove-meta').textContent = 'Cycle ' + cycleNum + ' complete';
-  document.getElementById('ove-name').textContent = cd.name || ('Cycle ' + cycleNum);
-  document.getElementById('ove-target').textContent = cd.targetReps > 0 ? 'Target: ' + cd.targetReps + ' reps' : '';
-  document.getElementById('ove-reps').value = '';
-  document.getElementById('overlay-cycle-end').classList.remove('hidden');
-}
-
-function confirmCycleEnd() {
-  var reps = parseInt(document.getElementById('ove-reps').value) || 0;
-  sessionCycleData[pendingCycleNum - 1].actualReps = reps;
-  document.getElementById('overlay-cycle-end').classList.add('hidden');
-  var go = advancePhase();
-  if (go) runInterval = setInterval(runTick, 1000);
-}
-
 function showWorkoutDone() {
   playPhaseSound('DONE!');
   vib([200, 100, 200, 100, 400]);
@@ -224,7 +266,7 @@ function showWorkoutDone() {
   sessionCycleData.forEach(function(cd, i) {
     var name = cd.name || ('Cycle ' + (i+1));
     var target = cd.targetReps > 0 ? cd.targetReps : null;
-    var actual = cd.actualReps;
+    var actual = cd.roundReps.reduce(function(a,b){return a+b;}, 0);
     var pctHtml = '';
     if (target) {
       var pct = Math.round((actual / target) * 100);
@@ -250,7 +292,6 @@ function finishWorkoutRun() {
 function skipRunPhase() {
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
-  document.getElementById('overlay-cycle-end').classList.add('hidden');
   var go = advancePhase();
   if (go) runInterval = setInterval(runTick, 1000);
 }
@@ -258,7 +299,6 @@ function skipRunPhase() {
 function stopWorkoutRun() {
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
-  document.getElementById('overlay-cycle-end').classList.add('hidden');
   document.getElementById('overlay-workout-done').classList.add('hidden');
   document.getElementById('screen-workout-run').style.background = '';
   show('screen-workouts');
