@@ -116,10 +116,86 @@ var runSeq = [], runIndex = 0, runRemaining = 0, runInterval = null;
 var pendingCycleNum = 0;
 var currentRepInputVal = 0;
 var lastWorkSuggest = 0;
-var phaseStartTime = 0;   // Date.now() when current phase timer started
-var phaseTotalSecs = 0;   // total seconds for current phase
-var lastBeepSec = -1;     // last second at which we beeped (avoid duplicates)
+var phaseStartTime = 0;
+var phaseTotalSecs = 0;
+var lastBeepSec = -1;
+var isPaused = false;
+var pauseStartTime = 0;
+var pauseRafId = null;
+var pausedForConfirm = false;
 var wakeLock = null;
+
+function togglePause() { isPaused ? resumeTimer() : pauseTimer(); }
+
+function pauseTimer() {
+  if (!runInterval || isPaused) return;
+  isPaused = true;
+  clearInterval(runInterval); runInterval = null;
+  pauseStartTime = Date.now();
+  releaseWakeLock();
+  var btn = document.getElementById('run-pause-btn');
+  if (btn) { btn.textContent = 'Reprendre'; btn.classList.add('btn-paused'); }
+  var skipBtn = document.getElementById('run-skip-btn');
+  if (skipBtn) skipBtn.disabled = true;
+  document.getElementById('run-pause-info').classList.remove('hidden');
+  (function tick() {
+    if (!isPaused) return;
+    var s = Math.floor((Date.now() - pauseStartTime) / 1000);
+    document.getElementById('run-pause-chrono').textContent = pad(Math.floor(s/60)) + ':' + pad(s%60);
+    pauseRafId = requestAnimationFrame(tick);
+  })();
+}
+
+function resumeTimer() {
+  if (!isPaused) return;
+  isPaused = false;
+  phaseStartTime = Date.now() - (pauseStartTime - phaseStartTime);
+  cancelAnimationFrame(pauseRafId); pauseRafId = null;
+  requestWakeLock();
+  var btn = document.getElementById('run-pause-btn');
+  if (btn) { btn.textContent = 'Pause'; btn.classList.remove('btn-paused'); }
+  var skipBtn = document.getElementById('run-skip-btn');
+  if (skipBtn) skipBtn.disabled = false;
+  document.getElementById('run-pause-info').classList.add('hidden');
+  runInterval = setInterval(runTick, 1000);
+}
+
+function askStopWorkout() {
+  pausedForConfirm = !isPaused;
+  if (!isPaused) pauseTimer();
+  document.getElementById('overlay-stop-confirm').classList.remove('hidden');
+}
+function cancelStopWorkout() {
+  document.getElementById('overlay-stop-confirm').classList.add('hidden');
+  if (pausedForConfirm) { pausedForConfirm = false; resumeTimer(); }
+}
+function confirmStopWorkout() {
+  pausedForConfirm = false; isPaused = false;
+  cancelAnimationFrame(pauseRafId); pauseRafId = null;
+  document.getElementById('overlay-stop-confirm').classList.add('hidden');
+  stopWorkoutRun();
+}
+
+function addCycleToRun() {
+  var newCycle = currentWorkout.cycles + 1;
+  currentWorkout.cycles = newCycle;
+  sessionCycleData.push({ name: '', targetReps: 0, roundReps: [] });
+  // Find COOLDOWN position and insert before it
+  var idx = runSeq.length - 1;
+  while (idx >= 0 && runSeq[idx].name !== 'COOLDOWN') idx--;
+  if (idx < 0) idx = runSeq.length;
+  var insert = [
+    {name:'REST BETWEEN CYCLES', color:'#eab308', duration:currentWorkout.restBetweenCycles, round:0, cycle:newCycle-1},
+    {name:'__CYCLE_START__', cycle:newCycle, duration:0}
+  ];
+  for (var r = 1; r <= currentWorkout.rounds; r++) {
+    insert.push({name:'WORK', color:'#22c55e', duration:currentWorkout.work, round:r, cycle:newCycle});
+    insert.push({name:'REST', color:'#ef4444', duration:currentWorkout.rest, round:r, cycle:newCycle});
+  }
+  Array.prototype.splice.apply(runSeq, [idx, 0].concat(insert));
+  beep(660, 0.08); setTimeout(function(){ beep(880, 0.12); }, 120);
+  updateRunDisplay();
+}
 
 function requestWakeLock() {
   if (!('wakeLock' in navigator)) return;
@@ -180,6 +256,8 @@ function startWorkoutRun(workout) {
   runIndex = 0; runRemaining = 0;
   currentRepInputVal = 0; lastWorkSuggest = 0;
   phaseStartTime = 0; phaseTotalSecs = 0; lastBeepSec = -1;
+  isPaused = false; pausedForConfirm = false;
+  cancelAnimationFrame(pauseRafId); pauseRafId = null;
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
   document.getElementById('overlay-workout-done').classList.add('hidden');
@@ -188,6 +266,10 @@ function startWorkoutRun(workout) {
   document.getElementById('run-rest-panel').classList.add('hidden');
   document.getElementById('run-rest-summary').classList.add('hidden');
   document.getElementById('run-between-panel').classList.add('hidden');
+  document.getElementById('run-pause-info').classList.add('hidden');
+  document.getElementById('overlay-stop-confirm').classList.add('hidden');
+  var pb = document.getElementById('run-pause-btn'); if (pb) { pb.textContent = 'Pause'; pb.classList.remove('btn-paused'); }
+  var sb = document.getElementById('run-skip-btn'); if (sb) sb.disabled = false;
   document.getElementById('screen-workout-run').style.background = '';
   show('screen-workout-run');
   var first = runSeq[0];
@@ -247,7 +329,7 @@ function runTick() {
 
 // Resume after background / screen lock
 function handleAppResume() {
-  if (!currentWorkout || !runInterval) return;
+  if (!currentWorkout || !runInterval || isPaused) return;
   var elapsed = Math.floor((Date.now() - phaseStartTime) / 1000);
   runRemaining = Math.max(0, phaseTotalSecs - elapsed);
   if (runRemaining <= 0) {
@@ -431,8 +513,11 @@ function skipRunPhase() {
 
 function stopWorkoutRun() {
   releaseWakeLock();
+  isPaused = false;
+  cancelAnimationFrame(pauseRafId); pauseRafId = null;
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
+  document.getElementById('overlay-stop-confirm').classList.add('hidden');
   document.getElementById('overlay-workout-done').classList.add('hidden');
   document.getElementById('screen-workout-run').style.background = '';
   show('screen-workouts');

@@ -159,6 +159,7 @@
             <span id="run-between-pct" class="rest-stat-pct pct-none">—</span>
           </div>
         </div>
+        <button class="btn-secondary btn-full" style="margin-top:0.75rem;font-size:0.9rem" onclick="addCycleToRun()">+ Ajouter un cycle</button>
       </div>
 
       <!-- REST rep stepper -->
@@ -182,9 +183,22 @@
         </div>
       </div>
 
+      <div id="run-pause-info" class="run-pause-info hidden">En pause · <span id="run-pause-chrono">00:00</span></div>
       <div class="tabata-actions">
-        <button class="btn-secondary btn-large" onclick="skipRunPhase()">Skip</button>
-        <button class="btn-danger btn-large" onclick="stopWorkoutRun()">Stop</button>
+        <button class="btn-secondary btn-large" id="run-skip-btn" onclick="skipRunPhase()">Skip</button>
+        <button class="btn-secondary btn-large" id="run-pause-btn" onclick="togglePause()">Pause</button>
+        <button class="btn-secondary btn-large" id="run-stop-btn" onclick="askStopWorkout()">Fin</button>
+      </div>
+    </div>
+
+    <!-- Overlay: Stop confirmation -->
+    <div id="overlay-stop-confirm" class="run-overlay hidden">
+      <div class="run-overlay-card">
+        <p class="overlay-meta">Workout en cours</p>
+        <h2 class="overlay-exercise" style="font-size:1.15rem;margin-bottom:0.25rem">Terminer le workout ?</h2>
+        <p class="overlay-target">La progression non sauvegardée sera perdue.</p>
+        <button class="btn-danger btn-full btn-large" onclick="confirmStopWorkout()">Terminer</button>
+        <button class="btn-secondary btn-full" onclick="cancelStopWorkout()">Continuer</button>
       </div>
     </div>
 
