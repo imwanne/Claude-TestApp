@@ -217,7 +217,25 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
 .btn-secondary:active { background: #273449; }
 .btn-secondary:disabled { opacity: 0.35; cursor: default; }
+.btn-tertiary { background: transparent; color: #94a3b8; border: 1.5px solid #475569; }
+.btn-tertiary:active { background: #1e293b; color: #f1f5f9; }
+.btn-tertiary:disabled { opacity: 0.35; cursor: default; }
 .btn-full { width: 100%; }
 .btn-large { font-size: 1rem; padding: 0.9rem; min-height: 52px; }
+
+/* DIFFICULTY */
+.difficulty-selector { display: flex; gap: 0.4rem; }
+.diff-dot { flex: 1; height: 38px; border-radius: 8px; border: 1.5px solid #334155; background: transparent; color: #475569; font-size: 0.88rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.diff-dot.diff-1.active { background: #22c55e20; border-color: #22c55e; color: #22c55e; }
+.diff-dot.diff-2.active { background: #84cc1620; border-color: #84cc16; color: #84cc16; }
+.diff-dot.diff-3.active { background: #eab30820; border-color: #eab308; color: #eab308; }
+.diff-dot.diff-4.active { background: #f9731620; border-color: #f97316; color: #f97316; }
+.diff-dot.diff-5.active { background: #ef444420; border-color: #ef4444; color: #ef4444; }
+.diff-badge { display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.18rem 0.55rem; border-radius: 100px; text-transform: uppercase; }
+.diff-badge-1 { background: #22c55e18; color: #22c55e; }
+.diff-badge-2 { background: #84cc1618; color: #84cc16; }
+.diff-badge-3 { background: #eab30818; color: #eab308; }
+.diff-badge-4 { background: #f9731618; color: #f97316; }
+.diff-badge-5 { background: #ef444418; color: #ef4444; }
 
 .hidden { display: none !important; }

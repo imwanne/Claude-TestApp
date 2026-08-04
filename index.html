@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Timer App</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
 
@@ -110,6 +110,16 @@
         <div class="form-group"><label for="workout-name">Name *</label><input type="text" id="workout-name" placeholder="e.g. Morning HIIT" maxlength="40" /></div>
         <div class="form-group"><label for="workout-description">Description</label><textarea id="workout-description" placeholder="Optional notes..." rows="2"></textarea></div>
         <div class="form-group"><label for="workout-objective">Objective</label><input type="text" id="workout-objective" placeholder="e.g. Build chest strength" maxlength="80" /></div>
+        <div class="form-group">
+          <label>Difficulté</label>
+          <div class="difficulty-selector" id="we-difficulty">
+            <button type="button" class="diff-dot diff-1" onclick="setDifficulty(1)">1</button>
+            <button type="button" class="diff-dot diff-2" onclick="setDifficulty(2)">2</button>
+            <button type="button" class="diff-dot diff-3" onclick="setDifficulty(3)">3</button>
+            <button type="button" class="diff-dot diff-4" onclick="setDifficulty(4)">4</button>
+            <button type="button" class="diff-dot diff-5" onclick="setDifficulty(5)">5</button>
+          </div>
+        </div>
       </div>
       <div class="param-list">
         <div class="param-section-title">INTERVALS</div>
@@ -185,9 +195,9 @@
 
       <div id="run-pause-info" class="run-pause-info hidden">En pause · <span id="run-pause-chrono">00:00</span></div>
       <div class="tabata-actions">
-        <button class="btn-secondary btn-large" id="run-skip-btn" onclick="skipRunPhase()">Skip</button>
-        <button class="btn-secondary btn-large" id="run-pause-btn" onclick="togglePause()">Pause</button>
-        <button class="btn-secondary btn-large" id="run-stop-btn" onclick="askStopWorkout()">Fin</button>
+        <button class="btn-tertiary btn-large" id="run-skip-btn" onclick="skipRunPhase()">Skip</button>
+        <button class="btn-tertiary btn-large" id="run-pause-btn" onclick="togglePause()">Pause</button>
+        <button class="btn-tertiary btn-large" id="run-stop-btn" onclick="askStopWorkout()">Fin</button>
       </div>
     </div>
 
@@ -243,6 +253,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

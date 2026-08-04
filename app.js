@@ -556,6 +556,15 @@ function chronoLap() {
   document.getElementById('chrono-laps').prepend(li);
 }
 
+// DIFFICULTY
+var DIFF_LABELS = ['','Facile','Léger','Moyen','Difficile','Extrême'];
+function setDifficulty(level) {
+  editDifficulty = level;
+  document.querySelectorAll('#we-difficulty .diff-dot').forEach(function(btn, i) {
+    btn.classList.toggle('active', i + 1 === level);
+  });
+}
+
 // STORAGE
 function loadWorkouts() { try { return JSON.parse(localStorage.getItem('workouts')||'[]'); } catch(e) { return []; } }
 function saveWorkouts(list) { localStorage.setItem('workouts', JSON.stringify(list)); }
@@ -575,11 +584,12 @@ function renderWorkouts() {
     var dur = formatTotalDuration(calcTotalDuration(w));
     var meta = w.rounds+'r × '+w.cycles+'c';
     var desc = w.description ? '<span class="workout-item-desc">'+escHtml(w.description)+'</span>' : '';
+    var diffBadge = w.difficulty ? '<span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span>' : '';
     var li = document.createElement('li'); li.className='workout-item';
     li.innerHTML =
       '<div class="workout-item-main" onclick="openWorkoutPreview(\''+w.id+'\')">' +
         '<span class="workout-item-name">'+escHtml(w.name)+'</span>'+desc+
-        '<div class="workout-item-meta"><span>'+meta+'</span><span class="meta-duration">'+dur+'</span></div>'+
+        '<div class="workout-item-meta"><span>'+meta+'</span>'+(diffBadge||'')+'<span class="meta-duration">'+dur+'</span></div>'+
       '</div>'+
       '<div class="workout-item-actions">'+
         '<button class="icon-btn" onclick="event.stopPropagation();openWorkoutEdit(getWorkout(\''+w.id+'\'),\'screen-workouts\')" aria-label="Edit">'+
@@ -607,6 +617,7 @@ function openWorkoutPreview(idOrObj) {
   document.getElementById('preview-title').textContent = w.name;
   var dur = formatTotalDuration(calcTotalDuration(w));
   var headerHtml = '<p class="preview-workout-name">'+escHtml(w.name)+'</p>';
+  if (w.difficulty) headerHtml += '<div style="margin-bottom:0.5rem"><span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span></div>';
   if (w.description) headerHtml += '<p class="preview-desc">'+escHtml(w.description)+'</p>';
   if (w.objective) headerHtml += '<div class="preview-objective"><span class="preview-obj-label">Objective</span><span class="preview-obj-text">'+escHtml(w.objective)+'</span></div>';
   headerHtml += '<div class="preview-meta"><span>'+w.cycles+' cycle'+(w.cycles>1?'s':'')+' · '+w.rounds+' rounds · Work '+formatDuration(w.work)+'</span><span>'+dur+'</span></div>';
@@ -627,6 +638,7 @@ function startPreviewWorkout() { unlockAudio(); startWorkoutRun(previewWorkout);
 var editConfig = {prepare:15,work:60,rest:30,rounds:3,cycles:1,restBetweenCycles:120,cooldown:150};
 var editCycleNames = [];
 var editCycleTargetReps = [];
+var editDifficulty = 1;
 var editingWorkoutId = null;
 var workoutEditOrigin = 'screen-workouts';
 
@@ -698,6 +710,7 @@ function openWorkoutEdit(workout, origin) {
   PARAM_KEYS.forEach(function(k){ document.getElementById('we-val-'+k).textContent = PARAM_IS_COUNT[k] ? editConfig[k] : formatDuration(editConfig[k]); });
   editCycleNames = workout && workout.cycleNames ? workout.cycleNames.slice() : [];
   editCycleTargetReps = workout && workout.cycleTargetReps ? workout.cycleTargetReps.slice() : [];
+  setDifficulty(workout ? (workout.difficulty || 1) : 1);
   regenerateCycleDetails();
   show('screen-workout-edit');
 }
@@ -715,7 +728,7 @@ function saveWorkout() {
   var creps = editCycleTargetReps.slice(0, n);
   var list = loadWorkouts();
   var newId = editingWorkoutId || genId();
-  var entry = Object.assign({id:newId, name:name, description:desc, objective:obj, cycleNames:cnames, cycleTargetReps:creps}, editConfig);
+  var entry = Object.assign({id:newId, name:name, description:desc, objective:obj, difficulty:editDifficulty, cycleNames:cnames, cycleTargetReps:creps}, editConfig);
   if (editingWorkoutId) {
     list = list.map(function(w){ return w.id===editingWorkoutId ? entry : w; });
   } else {
