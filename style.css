@@ -226,11 +226,14 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 /* DIFFICULTY */
 .difficulty-selector { display: flex; gap: 0.4rem; }
 .diff-dot { flex: 1; height: 38px; border-radius: 8px; border: 1.5px solid #334155; background: transparent; color: #475569; font-size: 0.88rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-.diff-dot.diff-1.active { background: #22c55e20; border-color: #22c55e; color: #22c55e; }
-.diff-dot.diff-2.active { background: #84cc1620; border-color: #84cc16; color: #84cc16; }
-.diff-dot.diff-3.active { background: #eab30820; border-color: #eab308; color: #eab308; }
-.diff-dot.diff-4.active { background: #f9731620; border-color: #f97316; color: #f97316; }
-.diff-dot.diff-5.active { background: #ef444420; border-color: #ef4444; color: #ef4444; }
+.diff-1.active { background: #22c55e20; border-color: #22c55e; color: #22c55e; }
+.diff-2.active { background: #84cc1620; border-color: #84cc16; color: #84cc16; }
+.diff-3.active { background: #eab30820; border-color: #eab308; color: #eab308; }
+.diff-4.active { background: #f9731620; border-color: #f97316; color: #f97316; }
+.diff-5.active { background: #ef444420; border-color: #ef4444; color: #ef4444; }
+.rp-diff-row { display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #334155; }
+.run-diff-selector { display: flex; gap: 0.3rem; }
+.run-diff-btn { width: 36px; height: 32px; border-radius: 7px; border: 1.5px solid #334155; background: transparent; color: #475569; font-size: 0.82rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .diff-badge { display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.18rem 0.55rem; border-radius: 100px; text-transform: uppercase; }
 .diff-badge-1 { background: #22c55e18; color: #22c55e; }
 .diff-badge-2 { background: #84cc1618; color: #84cc16; }

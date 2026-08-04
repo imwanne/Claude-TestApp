@@ -124,6 +124,8 @@ var pauseStartTime = 0;
 var pauseRafId = null;
 var pausedForConfirm = false;
 var wakeLock = null;
+var currentRoundDiff = 0;
+var currentCycleDiff = 0;
 
 function togglePause() { isPaused ? resumeTimer() : pauseTimer(); }
 
@@ -249,9 +251,12 @@ function startWorkoutRun(workout) {
     sessionCycleData.push({
       name: (workout.cycleNames && workout.cycleNames[i]) || '',
       targetReps: (workout.cycleTargetReps && workout.cycleTargetReps[i]) || 0,
-      roundReps: []
+      roundReps: [],
+      roundDiffs: [],
+      cycleDiff: 0
     });
   }
+  currentRoundDiff = 0; currentCycleDiff = 0;
   runSeq = buildWorkoutSequence(workout);
   runIndex = 0; runRemaining = 0;
   currentRepInputVal = 0; lastWorkSuggest = 0;
@@ -293,6 +298,12 @@ function processCurrentPhase() {
   lastBeepSec = -1;
   if (phase.name === 'REST') {
     currentRepInputVal = lastWorkSuggest;
+    currentRoundDiff = 0;
+    document.querySelectorAll('#run-round-diff .run-diff-btn').forEach(function(btn) { btn.classList.remove('active'); });
+  }
+  if (phase.name === 'REST BETWEEN CYCLES') {
+    currentCycleDiff = 0;
+    document.querySelectorAll('#run-cycle-diff .run-diff-btn').forEach(function(btn) { btn.classList.remove('active'); });
   }
   playPhaseSound(phase.name);
   vib([100, 50, 100]);
@@ -304,7 +315,11 @@ function advancePhase() {
   var leaving = runSeq[runIndex];
   if (leaving && leaving.name === 'REST' && leaving.round > 0 && leaving.cycle > 0) {
     var cd = sessionCycleData[leaving.cycle - 1];
-    if (cd) cd.roundReps.push(currentRepInputVal);
+    if (cd) { cd.roundReps.push(currentRepInputVal); cd.roundDiffs.push(currentRoundDiff); }
+  }
+  if (leaving && leaving.name === 'REST BETWEEN CYCLES' && leaving.cycle > 0) {
+    var cdB = sessionCycleData[leaving.cycle - 1];
+    if (cdB) cdB.cycleDiff = currentCycleDiff;
   }
   runIndex++;
   return processCurrentPhase();
@@ -345,7 +360,7 @@ function fastForwardFromOverrun(overrunSecs) {
   var leaving = runSeq[runIndex];
   if (leaving && leaving.name === 'REST' && leaving.round > 0 && leaving.cycle > 0) {
     var cd0 = sessionCycleData[leaving.cycle - 1];
-    if (cd0) cd0.roundReps.push(currentRepInputVal);
+    if (cd0) { cd0.roundReps.push(currentRepInputVal); cd0.roundDiffs.push(currentRoundDiff); }
   }
   runIndex++;
   while (runIndex < runSeq.length) {
@@ -489,9 +504,16 @@ function showWorkoutDone() {
     } else {
       pctHtml = '<span class="summary-pct pct-none">—</span>';
     }
+    var diffLevel = cd.cycleDiff > 0 ? cd.cycleDiff : (function(){
+      var rated = (cd.roundDiffs||[]).filter(function(d){return d>0;});
+      return rated.length > 0 ? Math.round(rated.reduce(function(a,b){return a+b;},0)/rated.length) : 0;
+    })();
+    var diffHtml = diffLevel > 0 ? '<span class="diff-badge diff-badge-'+diffLevel+'" style="margin-top:0.35rem">'+DIFF_LABELS[diffLevel]+'</span>' : '';
     html += '<div class="summary-row"><div class="summary-cycle">Cycle ' + (i+1) + '</div>';
     html += '<div class="summary-exercise">' + escHtml(name) + '</div>';
-    html += '<div class="summary-stats"><span class="summary-reps">' + actual + (target ? ' / ' + target + ' reps' : ' reps') + '</span>' + pctHtml + '</div></div>';
+    html += '<div class="summary-stats"><span class="summary-reps">' + actual + (target ? ' / ' + target + ' reps' : ' reps') + '</span>' + pctHtml + '</div>';
+    if (diffHtml) html += '<div>' + diffHtml + '</div>';
+    html += '</div>';
   });
   document.getElementById('done-summary').innerHTML = html;
   document.getElementById('overlay-workout-done').classList.remove('hidden');
@@ -561,6 +583,18 @@ var DIFF_LABELS = ['','Facile','Léger','Moyen','Difficile','Extrême'];
 function setDifficulty(level) {
   editDifficulty = level;
   document.querySelectorAll('#we-difficulty .diff-dot').forEach(function(btn, i) {
+    btn.classList.toggle('active', i + 1 === level);
+  });
+}
+function setRoundDiff(level) {
+  currentRoundDiff = level;
+  document.querySelectorAll('#run-round-diff .run-diff-btn').forEach(function(btn, i) {
+    btn.classList.toggle('active', i + 1 === level);
+  });
+}
+function setCycleDiff(level) {
+  currentCycleDiff = level;
+  document.querySelectorAll('#run-cycle-diff .run-diff-btn').forEach(function(btn, i) {
     btn.classList.toggle('active', i + 1 === level);
   });
 }
