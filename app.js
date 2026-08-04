@@ -116,6 +116,9 @@ var runSeq = [], runIndex = 0, runRemaining = 0, runInterval = null;
 var pendingCycleNum = 0;
 var currentRepInputVal = 0;
 var lastWorkSuggest = 0;
+var phaseStartTime = 0;   // Date.now() when current phase timer started
+var phaseTotalSecs = 0;   // total seconds for current phase
+var lastBeepSec = -1;     // last second at which we beeped (avoid duplicates)
 
 function computeSuggest(cycleIdx, roundIdx) {
   var cd = sessionCycleData[cycleIdx];
@@ -164,6 +167,7 @@ function startWorkoutRun(workout) {
   runSeq = buildWorkoutSequence(workout);
   runIndex = 0; runRemaining = 0;
   currentRepInputVal = 0; lastWorkSuggest = 0;
+  phaseStartTime = 0; phaseTotalSecs = 0; lastBeepSec = -1;
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
   document.getElementById('overlay-workout-done').classList.add('hidden');
@@ -176,6 +180,9 @@ function startWorkoutRun(workout) {
   show('screen-workout-run');
   var first = runSeq[0];
   runRemaining = first.duration;
+  phaseStartTime = Date.now();
+  phaseTotalSecs = first.duration;
+  lastBeepSec = -1;
   updateRunDisplay();
   playPhaseSound(first.name);
   runInterval = setInterval(runTick, 1000);
@@ -186,6 +193,9 @@ function processCurrentPhase() {
   var phase = runSeq[runIndex];
   if (phase.name === '__CYCLE_START__') { showCycleStartOverlay(phase.cycle); return false; }
   runRemaining = phase.duration;
+  phaseStartTime = Date.now();
+  phaseTotalSecs = phase.duration;
+  lastBeepSec = -1;
   if (phase.name === 'REST') {
     currentRepInputVal = lastWorkSuggest;
   }
@@ -206,8 +216,13 @@ function advancePhase() {
 }
 
 function runTick() {
-  runRemaining--;
-  if (runRemaining <= 3 && runRemaining > 0) { beep(440,0.06,0.25); vib(30); }
+  var elapsed = Math.floor((Date.now() - phaseStartTime) / 1000);
+  runRemaining = Math.max(0, phaseTotalSecs - elapsed);
+  if (runRemaining <= 5 && runRemaining > 0 && runRemaining !== lastBeepSec) {
+    lastBeepSec = runRemaining;
+    beep(runRemaining === 1 ? 880 : 440, runRemaining === 1 ? 0.15 : 0.08, 0.35);
+    vib(25);
+  }
   if (runRemaining <= 0) {
     clearInterval(runInterval); runInterval = null;
     var go = advancePhase();
@@ -216,6 +231,52 @@ function runTick() {
   }
   updateRunDisplay();
 }
+
+// Resume after background / screen lock
+function handleAppResume() {
+  if (!currentWorkout || !runInterval) return;
+  var elapsed = Math.floor((Date.now() - phaseStartTime) / 1000);
+  runRemaining = Math.max(0, phaseTotalSecs - elapsed);
+  if (runRemaining <= 0) {
+    clearInterval(runInterval); runInterval = null;
+    fastForwardFromOverrun(elapsed - phaseTotalSecs);
+  } else {
+    updateRunDisplay();
+  }
+}
+
+function fastForwardFromOverrun(overrunSecs) {
+  // Save reps for the REST phase we're leaving (if any)
+  var leaving = runSeq[runIndex];
+  if (leaving && leaving.name === 'REST' && leaving.round > 0 && leaving.cycle > 0) {
+    var cd0 = sessionCycleData[leaving.cycle - 1];
+    if (cd0) cd0.roundReps.push(currentRepInputVal);
+  }
+  runIndex++;
+  while (runIndex < runSeq.length) {
+    var phase = runSeq[runIndex];
+    if (phase.name === '__CYCLE_START__') { runIndex++; continue; } // skip overlays
+    if (phase.duration <= overrunSecs) {
+      overrunSecs -= phase.duration;
+      runIndex++;
+    } else {
+      // This phase is currently active
+      runRemaining = phase.duration - overrunSecs;
+      phaseStartTime = Date.now() - overrunSecs * 1000;
+      phaseTotalSecs = phase.duration;
+      lastBeepSec = -1;
+      if (phase.name === 'REST') { currentRepInputVal = lastWorkSuggest; }
+      playPhaseSound(phase.name);
+      updateRunDisplay();
+      runInterval = setInterval(runTick, 1000);
+      return;
+    }
+  }
+  showWorkoutDone();
+}
+
+document.addEventListener('visibilitychange', function() { if (!document.hidden) handleAppResume(); });
+window.addEventListener('pageshow', handleAppResume);
 
 function updateRunDisplay() {
   var phase = runSeq[runIndex];
