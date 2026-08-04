@@ -127,6 +127,11 @@ body {
 .cycle-edit-fields input:focus { border-color: #6366f1; }
 .cycle-edit-fields .input-name { flex: 1; }
 .cycle-edit-fields .input-reps { width: 90px; text-align: center; }
+.cycle-edit-header { display: flex; align-items: center; justify-content: space-between; }
+.cycle-move-btns { display: flex; gap: 0.3rem; }
+.cycle-move-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid #334155; background: #0f172a; color: #64748b; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.cycle-move-btn:active { background: #1e293b; color: #f1f5f9; }
+.cycle-move-btn:disabled { opacity: 0.2; cursor: default; }
 
 /* WORKOUT RUNNING */
 #screen-workout-run { align-items: center; justify-content: center; transition: background 0.4s; position: relative; touch-action: none; }

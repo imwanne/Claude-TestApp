@@ -485,8 +485,16 @@ function regenerateCycleDetails() {
   while (editCycleTargetReps.length < n) editCycleTargetReps.push(0);
   var html = '<div class="param-section-title">CYCLE DETAILS</div>';
   for (var i=0; i<n; i++) {
+    var upDis = i === 0 ? ' disabled' : '';
+    var downDis = i === n-1 ? ' disabled' : '';
     html += '<div class="cycle-edit-row">'+
-      '<div class="cycle-edit-label">Cycle '+(i+1)+'</div>'+
+      '<div class="cycle-edit-header">'+
+        '<span class="cycle-edit-label">Cycle '+(i+1)+'</span>'+
+        '<div class="cycle-move-btns">'+
+          '<button class="cycle-move-btn" onclick="moveCycle('+i+',-1)"'+upDis+'>↑</button>'+
+          '<button class="cycle-move-btn" onclick="moveCycle('+i+',1)"'+downDis+'>↓</button>'+
+        '</div>'+
+      '</div>'+
       '<div class="cycle-edit-fields">'+
         '<input type="text" class="input-name" id="we-cn-'+i+'" placeholder="Exercise name" value="'+escHtml(editCycleNames[i]||'')+'" />'+
         '<input type="number" class="input-reps" id="we-cr-'+i+'" placeholder="Reps" inputmode="numeric" min="0" value="'+(editCycleTargetReps[i]||'')+'" />'+
@@ -494,6 +502,19 @@ function regenerateCycleDetails() {
     '</div>';
   }
   document.getElementById('cycle-details-section').innerHTML = html;
+}
+
+function moveCycle(index, direction) {
+  collectCycleInputs();
+  var target = index + direction;
+  if (target < 0 || target >= editConfig.cycles) return;
+  var tmpName = editCycleNames[index];
+  editCycleNames[index] = editCycleNames[target];
+  editCycleNames[target] = tmpName;
+  var tmpReps = editCycleTargetReps[index];
+  editCycleTargetReps[index] = editCycleTargetReps[target];
+  editCycleTargetReps[target] = tmpReps;
+  regenerateCycleDetails();
 }
 
 function openWorkoutEdit(workout, origin) {
