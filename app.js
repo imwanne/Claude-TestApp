@@ -119,6 +119,18 @@ var lastWorkSuggest = 0;
 var phaseStartTime = 0;   // Date.now() when current phase timer started
 var phaseTotalSecs = 0;   // total seconds for current phase
 var lastBeepSec = -1;     // last second at which we beeped (avoid duplicates)
+var wakeLock = null;
+
+function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  navigator.wakeLock.request('screen').then(function(wl) {
+    wakeLock = wl;
+    wl.addEventListener('release', function() { wakeLock = null; });
+  }).catch(function() {});
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release().catch(function(){}); wakeLock = null; }
+}
 
 function computeSuggest(cycleIdx, roundIdx) {
   var cd = sessionCycleData[cycleIdx];
@@ -186,6 +198,7 @@ function startWorkoutRun(workout) {
   updateRunDisplay();
   playPhaseSound(first.name);
   runInterval = setInterval(runTick, 1000);
+  requestWakeLock();
 }
 
 function processCurrentPhase() {
@@ -275,8 +288,16 @@ function fastForwardFromOverrun(overrunSecs) {
   showWorkoutDone();
 }
 
-document.addEventListener('visibilitychange', function() { if (!document.hidden) handleAppResume(); });
-window.addEventListener('pageshow', handleAppResume);
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    handleAppResume();
+    if (currentWorkout && runInterval) requestWakeLock();
+  }
+});
+window.addEventListener('pageshow', function() {
+  handleAppResume();
+  if (currentWorkout && runInterval) requestWakeLock();
+});
 
 function updateRunDisplay() {
   var phase = runSeq[runIndex];
@@ -395,6 +416,7 @@ function showWorkoutDone() {
 }
 
 function finishWorkoutRun() {
+  releaseWakeLock();
   document.getElementById('overlay-workout-done').classList.add('hidden');
   document.getElementById('screen-workout-run').style.background = '';
   renderWorkouts(); show('screen-workouts');
@@ -408,6 +430,7 @@ function skipRunPhase() {
 }
 
 function stopWorkoutRun() {
+  releaseWakeLock();
   if (runInterval) { clearInterval(runInterval); runInterval = null; }
   document.getElementById('overlay-cycle-start').classList.add('hidden');
   document.getElementById('overlay-workout-done').classList.add('hidden');
