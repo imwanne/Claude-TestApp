@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Timer App</title>
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
 
@@ -245,6 +245,20 @@
       </div>
     </div>
 
+    <!-- Overlay: Célébration 100% -->
+    <div id="overlay-celebration" class="hidden" onclick="dismissCelebration()">
+      <canvas id="cel-canvas"></canvas>
+      <div id="cel-stage"></div>
+      <div class="cel-card">
+        <div class="cel-label">Objectif atteint !</div>
+        <div class="cel-pct" id="cel-pct">100%</div>
+        <div class="cel-stars">⭐⭐⭐</div>
+        <div id="cel-name" class="cel-name"></div>
+        <div id="cel-stats" class="cel-stats"></div>
+        <div class="cel-hint">Toucher pour continuer</div>
+      </div>
+    </div>
+
     <!-- Overlay: Done -->
     <div id="overlay-workout-done" class="run-overlay-done hidden">
       <div class="done-scroll">
@@ -273,6 +287,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
