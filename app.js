@@ -30,18 +30,32 @@ function formatTotalDuration(s) {
 
 // AUDIO
 var audioCtx = null;
+var audioOut = null; // brick-wall limiter node
+
 function unlockAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Brick-wall limiter: allows high gain without clipping
+    var lim = audioCtx.createDynamicsCompressor();
+    lim.threshold.value = -1;   // kick in at -1 dBFS
+    lim.knee.value = 0;         // hard knee
+    lim.ratio.value = 20;       // near brick-wall
+    lim.attack.value = 0.001;   // 1 ms
+    lim.release.value = 0.05;   // 50 ms
+    lim.connect(audioCtx.destination);
+    audioOut = lim;
+  }
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 function beep(freq, dur, vol, type) {
   if (!audioCtx) return;
-  vol = vol || 0.4;
   var osc = audioCtx.createOscillator();
   var gain = audioCtx.createGain();
-  osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.type = type || 'sine'; osc.frequency.value = freq;
-  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  osc.connect(gain);
+  gain.connect(audioOut || audioCtx.destination);
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol != null ? vol : 0.85, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
   osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
@@ -51,44 +65,44 @@ function playStartChime(name) {
   if (!audioCtx) return;
   if (name === 'PREPARE') {
     // Arpège montant C5-E5-G5 : "prêt ?"
-    beep(523, 0.09, 0.35); setTimeout(function(){ beep(659, 0.09, 0.4); }, 120); setTimeout(function(){ beep(784, 0.25, 0.5); }, 240);
+    beep(523, 0.09, 0.75); setTimeout(function(){ beep(659, 0.09, 0.8); }, 120); setTimeout(function(){ beep(784, 0.25, 0.9); }, 240);
   } else if (name === 'WORK') {
     // Double impulsion aiguë : "GO !"
-    beep(880, 0.07, 0.55); setTimeout(function(){ beep(1100, 0.18, 0.6); }, 95);
+    beep(880, 0.07, 0.85, 'square'); setTimeout(function(){ beep(1100, 0.18, 0.9, 'square'); }, 95);
   } else if (name === 'REST') {
     // Descente douce : "souffle"
-    beep(660, 0.14, 0.4); setTimeout(function(){ beep(494, 0.3, 0.3); }, 170);
+    beep(660, 0.14, 0.78); setTimeout(function(){ beep(494, 0.3, 0.7); }, 170);
   } else if (name === 'REST BETWEEN CYCLES') {
     // Arpège triumphant E5-G5-C6 : "cycle terminé !"
-    beep(659, 0.1, 0.4); setTimeout(function(){ beep(784, 0.1, 0.42); }, 125); setTimeout(function(){ beep(1047, 0.3, 0.48); }, 250);
+    beep(659, 0.1, 0.78); setTimeout(function(){ beep(784, 0.1, 0.82); }, 125); setTimeout(function(){ beep(1047, 0.3, 0.88); }, 250);
   } else if (name === 'COOLDOWN') {
     // Descente calme : "récup"
-    beep(440, 0.3, 0.32); setTimeout(function(){ beep(349, 0.45, 0.24); }, 360);
+    beep(440, 0.3, 0.72); setTimeout(function(){ beep(349, 0.45, 0.65); }, 360);
   } else if (name === 'DONE!') {
     // Fanfare de victoire
-    beep(659, 0.09, 0.45); setTimeout(function(){ beep(784, 0.09, 0.48); }, 130); setTimeout(function(){ beep(988, 0.09, 0.5); }, 260); setTimeout(function(){ beep(1319, 0.4, 0.55); }, 390);
+    beep(659, 0.09, 0.8); setTimeout(function(){ beep(784, 0.09, 0.83); }, 130); setTimeout(function(){ beep(988, 0.09, 0.86); }, 260); setTimeout(function(){ beep(1319, 0.4, 0.9); }, 390);
   } else if (name === 'CHRONO') {
     // Double bip de départ
-    beep(660, 0.08, 0.4); setTimeout(function(){ beep(880, 0.16, 0.45); }, 105);
+    beep(660, 0.08, 0.75); setTimeout(function(){ beep(880, 0.16, 0.82); }, 105);
   } else {
-    beep(660, 0.1, 0.4);
+    beep(660, 0.1, 0.78);
   }
 }
 
-// Tick de countdown (dernières 5 secondes)
+// Tick de countdown — onde carrée pour percer la musique
 function playCountdownTick(secLeft) {
   if (!audioCtx) return;
   if (secLeft === 1) {
-    beep(1100, 0.11, 0.55); // dernier tick : plus aigu et plus long
+    beep(1100, 0.12, 0.9, 'square'); // dernier tick : aigu, plus long
   } else {
-    beep(880, 0.07, 0.38);  // ticks réguliers
+    beep(880, 0.08, 0.8, 'square');  // ticks réguliers perçants
   }
 }
 
 // Sonnerie de fin de phase
 function playEndChime() {
   if (!audioCtx) return;
-  beep(784, 0.07, 0.42); setTimeout(function(){ beep(1047, 0.22, 0.48); }, 85);
+  beep(784, 0.07, 0.8); setTimeout(function(){ beep(1047, 0.22, 0.85); }, 85);
 }
 function vib(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
 
