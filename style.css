@@ -126,7 +126,12 @@ body {
 .cycle-edit-fields input { background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #e2e8f0; font-size: 0.88rem; padding: 0.5rem 0.7rem; outline: none; transition: border-color 0.2s; user-select: text; }
 .cycle-edit-fields input:focus { border-color: #6366f1; }
 .cycle-edit-fields .input-name { flex: 1; }
-.cycle-edit-fields .input-reps { width: 90px; text-align: center; }
+.cycle-edit-fields .input-reps { width: 80px; text-align: center; }
+.cycle-rounds-row { display:flex; align-items:center; justify-content:space-between; padding-top:0.4rem; }
+.cycle-rounds-label { font-size:0.8rem; color:#64748b; }
+.input-rounds { background:#0f172a; border:1px solid #475569; border-radius:8px; color:#e2e8f0; font-size:0.88rem; padding:0.5rem 0.7rem; outline:none; width:72px; text-align:center; user-select:text; transition:border-color 0.2s; -webkit-tap-highlight-color:transparent; }
+.input-rounds:focus { border-color:#6366f1; }
+.preview-cycle-rounds { font-size:0.8rem; color:#64748b; font-weight:600; flex-shrink:0; }
 .cycle-edit-header { display: flex; align-items: center; justify-content: space-between; }
 .cycle-move-btns { display: flex; gap: 0.3rem; }
 .cycle-move-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid #334155; background: #0f172a; color: #64748b; font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

@@ -14,10 +14,22 @@ function formatChrono(ms) { var cs = Math.floor(ms/10)%100; var sec = Math.floor
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function calcTotalDuration(w) {
-  var nWork = w.cycles * w.rounds;
-  var nRest = nWork;
   var nBetween = Math.max(0, w.cycles - 1);
-  return w.prepare + nWork * w.work + nRest * w.rest + nBetween * w.restBetweenCycles + w.cooldown;
+  var workRest = 0;
+  for (var ci = 0; ci < w.cycles; ci++) {
+    var cr = (w.cycleRounds && w.cycleRounds[ci] > 0) ? w.cycleRounds[ci] : w.rounds;
+    workRest += cr * (w.work + w.rest);
+  }
+  return w.prepare + workRest + nBetween * w.restBetweenCycles + w.cooldown;
+}
+
+function roundsSummary(w) {
+  var vals = [];
+  for (var ci = 0; ci < w.cycles; ci++) {
+    vals.push((w.cycleRounds && w.cycleRounds[ci] > 0) ? w.cycleRounds[ci] : w.rounds);
+  }
+  var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+  return mn === mx ? mn + 'r' : mn + '–' + mx + 'r';
 }
 
 function formatTotalDuration(s) {
@@ -149,8 +161,9 @@ function buildWorkoutSequence(w) {
   var seq = [];
   seq.push({name:'PREPARE', color:'#eab308', duration:w.prepare, round:0, cycle:0});
   for (var c = 1; c <= w.cycles; c++) {
+    var cRounds = (w.cycleRounds && w.cycleRounds[c-1] > 0) ? w.cycleRounds[c-1] : w.rounds;
     seq.push({name:'__CYCLE_START__', cycle:c, duration:0});
-    for (var r = 1; r <= w.rounds; r++) {
+    for (var r = 1; r <= cRounds; r++) {
       seq.push({name:'WORK', color:'#22c55e', duration:w.work, round:r, cycle:c});
       seq.push({name:'REST', color:'#ef4444', duration:w.rest, round:r, cycle:c});
     }
@@ -235,7 +248,10 @@ function confirmStopWorkout() {
 function addCycleToRun() {
   var newCycle = currentWorkout.cycles + 1;
   currentWorkout.cycles = newCycle;
-  sessionCycleData.push({ name: '', targetReps: 0, roundReps: [] });
+  if (!currentWorkout.cycleRounds) currentWorkout.cycleRounds = [];
+  var prevRounds = (currentWorkout.cycleRounds[newCycle-2] > 0) ? currentWorkout.cycleRounds[newCycle-2] : currentWorkout.rounds;
+  currentWorkout.cycleRounds.push(prevRounds);
+  sessionCycleData.push({ name: '', targetReps: 0, roundReps: [], roundDiffs: [], cycleDiff: 0 });
   // Find COOLDOWN position and insert before it
   var idx = runSeq.length - 1;
   while (idx >= 0 && runSeq[idx].name !== 'COOLDOWN') idx--;
@@ -244,7 +260,7 @@ function addCycleToRun() {
     {name:'REST BETWEEN CYCLES', color:'#eab308', duration:currentWorkout.restBetweenCycles, round:0, cycle:newCycle-1},
     {name:'__CYCLE_START__', cycle:newCycle, duration:0}
   ];
-  for (var r = 1; r <= currentWorkout.rounds; r++) {
+  for (var r = 1; r <= prevRounds; r++) {
     insert.push({name:'WORK', color:'#22c55e', duration:currentWorkout.work, round:r, cycle:newCycle});
     insert.push({name:'REST', color:'#ef4444', duration:currentWorkout.rest, round:r, cycle:newCycle});
   }
@@ -269,7 +285,8 @@ function computeSuggest(cycleIdx, roundIdx) {
   if (!cd || !cd.targetReps) return 0;
   var done = cd.roundReps.reduce(function(a,b){return a+b;}, 0);
   var remaining = Math.max(0, cd.targetReps - done);
-  var roundsLeft = currentWorkout.rounds - roundIdx;
+  var totalRounds = (currentWorkout.cycleRounds && currentWorkout.cycleRounds[cycleIdx] > 0) ? currentWorkout.cycleRounds[cycleIdx] : currentWorkout.rounds;
+  var roundsLeft = totalRounds - roundIdx;
   return roundsLeft > 0 ? Math.ceil(remaining / roundsLeft) : 0;
 }
 
@@ -466,8 +483,9 @@ function updateRunDisplay() {
   badge.textContent = phase.name;
   badge.style.background = phase.color || '#64748b';
   document.getElementById('run-timer').textContent = formatMmSs(runRemaining);
+  var phaseTotalRounds = (currentWorkout.cycleRounds && currentWorkout.cycleRounds[phase.cycle-1] > 0) ? currentWorkout.cycleRounds[phase.cycle-1] : currentWorkout.rounds;
   document.getElementById('run-progress').textContent = phase.round > 0
-    ? 'Round ' + phase.round + ' / ' + currentWorkout.rounds + '  ·  Cycle ' + phase.cycle + ' / ' + currentWorkout.cycles : '';
+    ? 'Round ' + phase.round + ' / ' + phaseTotalRounds + '  ·  Cycle ' + phase.cycle + ' / ' + currentWorkout.cycles : '';
   document.getElementById('screen-workout-run').style.background = (phase.color || '#64748b') + '14';
 
   var isWork = phase.name === 'WORK';
@@ -688,7 +706,7 @@ function renderWorkouts() {
   empty.classList.add('hidden');
   list.forEach(function(w) {
     var dur = formatTotalDuration(calcTotalDuration(w));
-    var meta = w.rounds+'r × '+w.cycles+'c';
+    var meta = roundsSummary(w)+' × '+w.cycles+'c';
     var desc = w.description ? '<span class="workout-item-desc">'+escHtml(w.description)+'</span>' : '';
     var diffBadge = w.difficulty ? '<span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span>' : '';
     var li = document.createElement('li'); li.className='workout-item';
@@ -726,13 +744,14 @@ function openWorkoutPreview(idOrObj) {
   if (w.difficulty) headerHtml += '<div style="margin-bottom:0.5rem"><span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span></div>';
   if (w.description) headerHtml += '<p class="preview-desc">'+escHtml(w.description)+'</p>';
   if (w.objective) headerHtml += '<div class="preview-objective"><span class="preview-obj-label">Objective</span><span class="preview-obj-text">'+escHtml(w.objective)+'</span></div>';
-  headerHtml += '<div class="preview-meta"><span>'+w.cycles+' cycle'+(w.cycles>1?'s':'')+' · '+w.rounds+' rounds · Work '+formatDuration(w.work)+'</span><span>'+dur+'</span></div>';
+  headerHtml += '<div class="preview-meta"><span>'+w.cycles+' cycle'+(w.cycles>1?'s':'')+' · '+roundsSummary(w)+' rounds · Work '+formatDuration(w.work)+'</span><span>'+dur+'</span></div>';
   document.getElementById('preview-header').innerHTML = headerHtml;
   var cyclesHtml = '<div class="param-section-title">CYCLES</div>';
   for (var i=0; i<w.cycles; i++) {
     var cname = (w.cycleNames && w.cycleNames[i]) || '—';
     var creps = (w.cycleTargetReps && w.cycleTargetReps[i] > 0) ? w.cycleTargetReps[i]+' reps' : '';
-    cyclesHtml += '<div class="preview-cycle-row"><span class="preview-cycle-num">Cycle '+(i+1)+'</span><span class="preview-cycle-name">'+escHtml(cname)+'</span>'+(creps?'<span class="preview-cycle-reps">'+creps+'</span>':'')+'</div>';
+    var crounds = (w.cycleRounds && w.cycleRounds[i] > 0) ? w.cycleRounds[i] : w.rounds;
+    cyclesHtml += '<div class="preview-cycle-row"><span class="preview-cycle-num">Cycle '+(i+1)+'</span><span class="preview-cycle-name">'+escHtml(cname)+'</span><span class="preview-cycle-rounds">'+crounds+'r</span>'+(creps?'<span class="preview-cycle-reps">'+creps+'</span>':'')+'</div>';
   }
   document.getElementById('preview-cycles').innerHTML = cyclesHtml;
   show('screen-workout-preview');
@@ -744,6 +763,7 @@ function startPreviewWorkout() { unlockAudio(); startWorkoutRun(previewWorkout);
 var editConfig = {prepare:15,work:60,rest:30,rounds:3,cycles:1,restBetweenCycles:120,cooldown:150};
 var editCycleNames = [];
 var editCycleTargetReps = [];
+var editCycleRounds = [];
 var editDifficulty = 1;
 var editingWorkoutId = null;
 var workoutEditOrigin = 'screen-workouts';
@@ -758,11 +778,14 @@ function collectCycleInputs() {
   for (var i=0; i<50; i++) {
     var ne = document.getElementById('we-cn-'+i);
     var re = document.getElementById('we-cr-'+i);
+    var rne = document.getElementById('we-crn-'+i);
     if (!ne) break;
     if (editCycleNames.length <= i) editCycleNames.push('');
     if (editCycleTargetReps.length <= i) editCycleTargetReps.push(0);
+    if (editCycleRounds.length <= i) editCycleRounds.push(editConfig.rounds);
     editCycleNames[i] = ne.value;
     editCycleTargetReps[i] = parseInt(re ? re.value : 0) || 0;
+    editCycleRounds[i] = parseInt(rne ? rne.value : 0) || editConfig.rounds;
   }
 }
 
@@ -770,6 +793,7 @@ function regenerateCycleDetails() {
   var n = editConfig.cycles;
   while (editCycleNames.length < n) editCycleNames.push('');
   while (editCycleTargetReps.length < n) editCycleTargetReps.push(0);
+  while (editCycleRounds.length < n) editCycleRounds.push(editConfig.rounds);
   var html = '<div class="param-section-title">CYCLE DETAILS</div>';
   for (var i=0; i<n; i++) {
     var upDis = i === 0 ? ' disabled' : '';
@@ -786,6 +810,10 @@ function regenerateCycleDetails() {
         '<input type="text" class="input-name" id="we-cn-'+i+'" placeholder="Exercise name" value="'+escHtml(editCycleNames[i]||'')+'" />'+
         '<input type="number" class="input-reps" id="we-cr-'+i+'" placeholder="Reps" inputmode="numeric" min="0" value="'+(editCycleTargetReps[i]||'')+'" />'+
       '</div>'+
+      '<div class="cycle-rounds-row">'+
+        '<span class="cycle-rounds-label">Rounds</span>'+
+        '<input type="number" class="input-rounds" id="we-crn-'+i+'" inputmode="numeric" min="1" value="'+(editCycleRounds[i]||editConfig.rounds)+'" />'+
+      '</div>'+
     '</div>';
   }
   document.getElementById('cycle-details-section').innerHTML = html;
@@ -801,6 +829,9 @@ function moveCycle(index, direction) {
   var tmpReps = editCycleTargetReps[index];
   editCycleTargetReps[index] = editCycleTargetReps[target];
   editCycleTargetReps[target] = tmpReps;
+  var tmpRounds = editCycleRounds[index];
+  editCycleRounds[index] = editCycleRounds[target];
+  editCycleRounds[target] = tmpRounds;
   regenerateCycleDetails();
 }
 
@@ -816,6 +847,7 @@ function openWorkoutEdit(workout, origin) {
   PARAM_KEYS.forEach(function(k){ document.getElementById('we-val-'+k).textContent = PARAM_IS_COUNT[k] ? editConfig[k] : formatDuration(editConfig[k]); });
   editCycleNames = workout && workout.cycleNames ? workout.cycleNames.slice() : [];
   editCycleTargetReps = workout && workout.cycleTargetReps ? workout.cycleTargetReps.slice() : [];
+  editCycleRounds = workout && workout.cycleRounds ? workout.cycleRounds.slice() : [];
   setDifficulty(workout ? (workout.difficulty || 1) : 1);
   regenerateCycleDetails();
   show('screen-workout-edit');
@@ -832,9 +864,10 @@ function saveWorkout() {
   var n = editConfig.cycles;
   var cnames = editCycleNames.slice(0, n);
   var creps = editCycleTargetReps.slice(0, n);
+  var crounds = editCycleRounds.slice(0, n);
   var list = loadWorkouts();
   var newId = editingWorkoutId || genId();
-  var entry = Object.assign({id:newId, name:name, description:desc, objective:obj, difficulty:editDifficulty, cycleNames:cnames, cycleTargetReps:creps}, editConfig);
+  var entry = Object.assign({id:newId, name:name, description:desc, objective:obj, difficulty:editDifficulty, cycleNames:cnames, cycleTargetReps:creps, cycleRounds:crounds}, editConfig);
   if (editingWorkoutId) {
     list = list.map(function(w){ return w.id===editingWorkoutId ? entry : w; });
   } else {
