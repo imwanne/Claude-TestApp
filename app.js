@@ -601,6 +601,13 @@ function showWorkoutDone() {
   });
   document.getElementById('done-summary').innerHTML = html;
   document.getElementById('overlay-workout-done').classList.remove('hidden');
+  var lastCd = sessionCycleData[sessionCycleData.length - 1];
+  if (lastCd && lastCd.targetReps > 0) {
+    var lastActual = lastCd.roundReps.reduce(function(a,b){return a+b;}, 0);
+    if (lastActual >= lastCd.targetReps) {
+      showCelebration(lastCd.name || '', lastActual, lastCd.targetReps);
+    }
+  }
 }
 
 function finishWorkoutRun() {
