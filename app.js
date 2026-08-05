@@ -447,13 +447,15 @@ function fastForwardFromOverrun(overrunSecs) {
 
 document.addEventListener('visibilitychange', function() {
   if (!document.hidden) {
+    if (audioCtx) audioCtx.resume().catch(function(){});
     handleAppResume();
-    if (currentWorkout && runInterval) requestWakeLock();
+    if (currentWorkout && !isPaused) requestWakeLock();
   }
 });
 window.addEventListener('pageshow', function() {
+  if (audioCtx) audioCtx.resume().catch(function(){});
   handleAppResume();
-  if (currentWorkout && runInterval) requestWakeLock();
+  if (currentWorkout && !isPaused) requestWakeLock();
 });
 
 function updateRunDisplay() {
@@ -616,12 +618,13 @@ var chronoStart=0, chronoElapsed=0, chronoRunning=false, chronoRafId=null, chron
 function toggleChrono() {
   if (chronoRunning) {
     chronoElapsed += Date.now()-chronoStart; cancelAnimationFrame(chronoRafId); chronoRunning=false;
+    releaseWakeLock();
     playEndChime();
     document.getElementById('chrono-start-btn').textContent='Start';
     document.getElementById('chrono-lap-btn').disabled=true;
     document.getElementById('chrono-reset-btn').disabled=false;
   } else {
-    unlockAudio(); chronoStart=Date.now(); chronoRunning=true;
+    unlockAudio(); requestWakeLock(); chronoStart=Date.now(); chronoRunning=true;
     playStartChime('CHRONO');
     document.getElementById('chrono-start-btn').textContent='Pause';
     document.getElementById('chrono-lap-btn').disabled=false;
@@ -632,6 +635,7 @@ function toggleChrono() {
 function tickChrono() { document.getElementById('chrono-display').textContent=formatChrono(chronoElapsed+(chronoRunning?Date.now()-chronoStart:0)); chronoRafId=requestAnimationFrame(tickChrono); }
 function resetChrono() {
   cancelAnimationFrame(chronoRafId); chronoRunning=false; chronoElapsed=0; chronoLapTimes=[];
+  releaseWakeLock();
   document.getElementById('chrono-display').textContent='00:00.00';
   document.getElementById('chrono-laps').innerHTML='';
   document.getElementById('chrono-start-btn').textContent='Start';
