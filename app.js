@@ -600,6 +600,18 @@ function updateRunDisplay() {
         wCycleRow.classList.add('hidden');
       }
     }
+    var nextBox = document.getElementById('run-next-cycle-box');
+    if (nextBox) {
+      var nextCd = sessionCycleData[phase.cycle]; // phase.cycle is 1-based; next cycle is at this index
+      var nextName = nextCd ? (nextCd.name || '') : '';
+      if (!nextName && currentWorkout.cycleNames) nextName = currentWorkout.cycleNames[phase.cycle] || '';
+      if (nextName) {
+        document.getElementById('run-next-cycle-name').textContent = nextName;
+        nextBox.classList.remove('hidden');
+      } else {
+        nextBox.classList.add('hidden');
+      }
+    }
   }
 }
 
