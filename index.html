@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Timer App</title>
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body>
 
@@ -166,6 +166,10 @@
       <div id="run-between-panel" class="run-panel hidden">
         <span id="run-between-label" class="rest-stat-label">Cycle terminé</span>
         <div id="run-between-name" class="run-cycle-name hidden" style="margin-top:0.25rem;text-align:left"></div>
+        <div id="run-next-cycle-box" class="run-next-cycle-box hidden">
+          <span class="run-next-cycle-label">Prochain cycle</span>
+          <span id="run-next-cycle-name" class="run-next-cycle-name"></span>
+        </div>
         <div class="rest-summary" style="margin-top:0.6rem">
           <div class="rest-stat-row rest-stat-total">
             <span class="rest-stat-label">Reps / Objectif</span>
@@ -176,10 +180,6 @@
             <span class="rest-stat-label">Poids déplacé</span>
             <span id="run-between-weight-val" class="rest-stat-val">—</span>
           </div>
-        </div>
-        <div id="run-next-cycle-box" class="run-next-cycle-box hidden">
-          <span class="run-next-cycle-label">Prochain cycle</span>
-          <span id="run-next-cycle-name" class="run-next-cycle-name"></span>
         </div>
         <div class="rp-diff-row">
           <span class="rp-label">Difficulté du cycle</span>
@@ -270,6 +270,7 @@
         <div class="cel-stars">⭐⭐⭐</div>
         <div id="cel-name" class="cel-name"></div>
         <div id="cel-stats" class="cel-stats"></div>
+        <div id="cel-weight" class="cel-weight hidden"></div>
         <div class="cel-hint">Toucher pour continuer</div>
       </div>
     </div>
@@ -302,6 +303,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

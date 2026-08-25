@@ -578,7 +578,9 @@ function updateRunDisplay() {
       pctEl.className = 'rest-stat-pct ' + pctCls;
       if (pct >= 100 && !celebrationShown) {
         celebrationShown = true;
-        showCelebration(cdB ? (cdB.name || '') : '', actual, target);
+        var celKg = 0;
+        if (cdB && cdB.roundWeights) cdB.roundWeights.forEach(function(w, i) { if (w > 0) celKg += w * (cdB.roundReps[i] || 0); });
+        showCelebration(cdB ? (cdB.name || '') : '', actual, target, celKg);
       }
     } else {
       progEl.textContent = actual + ' reps';
@@ -674,7 +676,9 @@ function showWorkoutDone() {
   if (lastCd && lastCd.targetReps > 0) {
     var lastActual = lastCd.roundReps.reduce(function(a,b){return a+b;}, 0);
     if (lastActual >= lastCd.targetReps) {
-      showCelebration(lastCd.name || '', lastActual, lastCd.targetReps);
+      var lastKg = 0;
+      if (lastCd.roundWeights) lastCd.roundWeights.forEach(function(w, i) { if (w > 0) lastKg += w * (lastCd.roundReps[i] || 0); });
+      showCelebration(lastCd.name || '', lastActual, lastCd.targetReps, lastKg);
     }
   }
 }
@@ -1191,7 +1195,7 @@ var CEL_POOL = [
   celParty, celBoom, celStarEyes, celUnicorn, celDragon
 ];
 
-function showCelebration(cycleName, actual, target) {
+function showCelebration(cycleName, actual, target, totalWeight) {
   celebrationActive = true;
   var pct = target > 0 ? Math.round((actual / target) * 100) : 100;
   document.getElementById('cel-pct').textContent = pct + '%';
@@ -1199,6 +1203,15 @@ function showCelebration(cycleName, actual, target) {
   nameEl.textContent = cycleName || '';
   nameEl.style.display = cycleName ? '' : 'none';
   document.getElementById('cel-stats').textContent = actual + ' / ' + target + ' reps';
+  var wEl = document.getElementById('cel-weight');
+  if (wEl) {
+    if (totalWeight > 0) {
+      wEl.textContent = (Math.round(totalWeight * 10) / 10) + ' kg déplacés';
+      wEl.classList.remove('hidden');
+    } else {
+      wEl.classList.add('hidden');
+    }
+  }
   var overlay = document.getElementById('overlay-celebration');
   overlay.classList.remove('hidden');
   var canvas = document.getElementById('cel-canvas');

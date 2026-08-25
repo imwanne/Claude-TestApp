@@ -274,6 +274,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .cel-stars { font-size:1.3rem; margin:.3rem 0; }
 .cel-name { font-size:1.05rem; font-weight:700; color:#f8fafc; margin-top:.3rem; }
 .cel-stats { font-size:.86rem; color:#94a3b8; font-variant-numeric:tabular-nums; margin-top:.2rem; }
+.cel-weight { font-size:.82rem; color:#60a5fa; font-variant-numeric:tabular-nums; margin-top:.15rem; }
 .cel-hint { font-size:.68rem; color:#334155; margin-top:1.25rem; letter-spacing:.05em; }
 
 .hidden { display: none !important; }
