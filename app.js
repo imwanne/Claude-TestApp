@@ -350,6 +350,7 @@ function startWorkoutRun(workout) {
   document.getElementById('run-rest-panel').classList.add('hidden');
   document.getElementById('run-rest-summary').classList.add('hidden');
   document.getElementById('run-between-panel').classList.add('hidden');
+  document.getElementById('run-next-cycle-box').classList.add('hidden');
   document.getElementById('run-pause-info').classList.add('hidden');
   document.getElementById('overlay-stop-confirm').classList.add('hidden');
   var pb = document.getElementById('run-pause-btn'); if (pb) { pb.textContent = 'Pause'; pb.classList.remove('btn-paused'); }
@@ -560,6 +561,7 @@ function updateRunDisplay() {
   // REST BETWEEN CYCLES panel: summary of just-finished cycle
   var betweenPanel = document.getElementById('run-between-panel');
   betweenPanel.classList.toggle('hidden', !isBetween);
+  document.getElementById('run-next-cycle-box').classList.add('hidden');
   if (isBetween && phase.cycle > 0) {
     var cdB = sessionCycleData[phase.cycle - 1];
     var actual = cdB ? cdB.roundReps.reduce(function(a,b){return a+b;}, 0) : 0;
@@ -671,6 +673,19 @@ function showWorkoutDone() {
     html += '</div>';
   });
   document.getElementById('done-summary').innerHTML = html;
+  var grandKg = 0;
+  sessionCycleData.forEach(function(cd) {
+    if (cd.roundWeights) cd.roundWeights.forEach(function(w, i) { if (w > 0) grandKg += w * (cd.roundReps[i] || 0); });
+  });
+  var twEl = document.getElementById('done-total-weight');
+  if (twEl) {
+    if (grandKg > 0) {
+      twEl.textContent = (Math.round(grandKg * 10) / 10) + ' kg déplacés au total';
+      twEl.classList.remove('hidden');
+    } else {
+      twEl.classList.add('hidden');
+    }
+  }
   document.getElementById('overlay-workout-done').classList.remove('hidden');
   var lastCd = sessionCycleData[sessionCycleData.length - 1];
   if (lastCd && lastCd.targetReps > 0) {
