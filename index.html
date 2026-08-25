@@ -4,8 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>Timer App</title>
-  <link rel="stylesheet" href="style.css?v=18" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sport Timer" />
+  <title>Sport Timer</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css?v=19" />
 </head>
 <body>
 
@@ -306,6 +312,13 @@
     </div>
   </div>
 
-  <script src="app.js?v=18"></script>
+  <script src="app.js?v=19"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/Claude-TestApp/sw.js');
+      });
+    }
+  </script>
 </body>
 </html>
