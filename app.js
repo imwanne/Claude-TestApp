@@ -515,6 +515,7 @@ function updateRunDisplay() {
   var isWork = phase.name === 'WORK';
   var isRest = phase.name === 'REST';
   var isBetween = phase.name === 'REST BETWEEN CYCLES';
+  var isPrepare = phase.name === 'PREPARE';
 
   // Cycle name — visible during WORK and REST
   var cycleName = '';
@@ -562,6 +563,14 @@ function updateRunDisplay() {
   var betweenPanel = document.getElementById('run-between-panel');
   betweenPanel.classList.toggle('hidden', !isBetween);
   document.getElementById('run-next-cycle-box').classList.add('hidden');
+  if (isPrepare) {
+    var firstCd = sessionCycleData[0];
+    var firstName = (firstCd && firstCd.name) ? firstCd.name : (currentWorkout.cycleNames && currentWorkout.cycleNames[0]) || '';
+    if (firstName) {
+      document.getElementById('run-next-cycle-name').textContent = firstName;
+      document.getElementById('run-next-cycle-box').classList.remove('hidden');
+    }
+  }
   if (isBetween && phase.cycle > 0) {
     var cdB = sessionCycleData[phase.cycle - 1];
     var actual = cdB ? cdB.roundReps.reduce(function(a,b){return a+b;}, 0) : 0;
