@@ -179,6 +179,8 @@ var sessionCycleData = [];
 var runSeq = [], runIndex = 0, runRemaining = 0, runInterval = null;
 var pendingCycleNum = 0;
 var currentRepInputVal = 0;
+var currentWeightInputVal = 0;
+var lastRoundWeight = 0;
 var lastWorkSuggest = 0;
 var phaseStartTime = 0;
 var phaseTotalSecs = 0;
@@ -251,7 +253,7 @@ function addCycleToRun() {
   if (!currentWorkout.cycleRounds) currentWorkout.cycleRounds = [];
   var prevRounds = (currentWorkout.cycleRounds[newCycle-2] > 0) ? currentWorkout.cycleRounds[newCycle-2] : currentWorkout.rounds;
   currentWorkout.cycleRounds.push(prevRounds);
-  sessionCycleData.push({ name: '', targetReps: 0, roundReps: [], roundDiffs: [], cycleDiff: 0 });
+  sessionCycleData.push({ name: '', targetReps: 0, roundReps: [], roundWeights: [], roundDiffs: [], cycleDiff: 0 });
   // Find COOLDOWN position and insert before it
   var idx = runSeq.length - 1;
   while (idx >= 0 && runSeq[idx].name !== 'COOLDOWN') idx--;
@@ -315,6 +317,10 @@ function changeRepInput(delta) {
   updateRestStats();
 }
 
+function onWeightChange(el) {
+  currentWeightInputVal = parseFloat(el.value) || 0;
+}
+
 function startWorkoutRun(workout) {
   currentWorkout = workout;
   sessionCycleData = [];
@@ -323,6 +329,7 @@ function startWorkoutRun(workout) {
       name: (workout.cycleNames && workout.cycleNames[i]) || '',
       targetReps: (workout.cycleTargetReps && workout.cycleTargetReps[i]) || 0,
       roundReps: [],
+      roundWeights: [],
       roundDiffs: [],
       cycleDiff: 0
     });
@@ -330,7 +337,7 @@ function startWorkoutRun(workout) {
   currentRoundDiff = 0; currentCycleDiff = 0;
   runSeq = buildWorkoutSequence(workout);
   runIndex = 0; runRemaining = 0;
-  currentRepInputVal = 0; lastWorkSuggest = 0;
+  currentRepInputVal = 0; currentWeightInputVal = 0; lastRoundWeight = 0; lastWorkSuggest = 0;
   phaseStartTime = 0; phaseTotalSecs = 0; lastBeepSec = -1;
   isPaused = false; pausedForConfirm = false;
   celebrationShown = false; dismissCelebration();
@@ -369,6 +376,11 @@ function processCurrentPhase() {
   phaseStartTime = Date.now();
   phaseTotalSecs = phase.duration;
   lastBeepSec = -1;
+  if (phase.name === 'WORK') {
+    currentWeightInputVal = lastRoundWeight;
+    var wInput = document.getElementById('run-weight-input');
+    if (wInput) wInput.value = lastRoundWeight > 0 ? lastRoundWeight : '';
+  }
   if (phase.name === 'REST') {
     currentRepInputVal = lastWorkSuggest;
     currentRoundDiff = 0;
@@ -388,7 +400,12 @@ function advancePhase() {
   var leaving = runSeq[runIndex];
   if (leaving && leaving.name === 'REST' && leaving.round > 0 && leaving.cycle > 0) {
     var cd = sessionCycleData[leaving.cycle - 1];
-    if (cd) { cd.roundReps.push(currentRepInputVal); cd.roundDiffs.push(currentRoundDiff); }
+    if (cd) {
+      cd.roundReps.push(currentRepInputVal);
+      cd.roundWeights.push(currentWeightInputVal);
+      cd.roundDiffs.push(currentRoundDiff);
+      if (currentWeightInputVal > 0) lastRoundWeight = currentWeightInputVal;
+    }
   }
   if (leaving && leaving.name === 'REST BETWEEN CYCLES' && leaving.cycle > 0) {
     var cdB = sessionCycleData[leaving.cycle - 1];
@@ -437,7 +454,12 @@ function fastForwardFromOverrun(overrunSecs) {
   var leaving = runSeq[runIndex];
   if (leaving && leaving.name === 'REST' && leaving.round > 0 && leaving.cycle > 0) {
     var cd0 = sessionCycleData[leaving.cycle - 1];
-    if (cd0) { cd0.roundReps.push(currentRepInputVal); cd0.roundDiffs.push(currentRoundDiff); }
+    if (cd0) {
+      cd0.roundReps.push(currentRepInputVal);
+      cd0.roundWeights.push(currentWeightInputVal);
+      cd0.roundDiffs.push(currentRoundDiff);
+      if (currentWeightInputVal > 0) lastRoundWeight = currentWeightInputVal;
+    }
   }
   runIndex++;
   while (runIndex < runSeq.length) {
@@ -452,6 +474,7 @@ function fastForwardFromOverrun(overrunSecs) {
       phaseStartTime = Date.now() - overrunSecs * 1000;
       phaseTotalSecs = phase.duration;
       lastBeepSec = -1;
+      if (phase.name === 'WORK') { currentWeightInputVal = lastRoundWeight; }
       if (phase.name === 'REST') { currentRepInputVal = lastWorkSuggest; }
       playStartChime(phase.name);
       updateRunDisplay();
@@ -520,6 +543,17 @@ function updateRunDisplay() {
   restPanel.classList.toggle('hidden', !isRest);
   if (isRest) {
     document.getElementById('run-rep-val').textContent = currentRepInputVal;
+    var wRow = document.getElementById('run-weight-this-round');
+    if (wRow) {
+      if (currentWeightInputVal > 0) {
+        var moved = Math.round(currentWeightInputVal * currentRepInputVal * 10) / 10;
+        document.getElementById('run-weight-this-val').textContent =
+          currentWeightInputVal + ' kg × ' + currentRepInputVal + ' = ' + moved + ' kg';
+        wRow.classList.remove('hidden');
+      } else {
+        wRow.classList.add('hidden');
+      }
+    }
     updateRestStats();
   }
 
@@ -550,6 +584,21 @@ function updateRunDisplay() {
       progEl.textContent = actual + ' reps';
       pctEl.textContent = '';
       pctEl.className = 'rest-stat-pct';
+    }
+    var totalCycleWeight = 0, hasCycleWeight = false;
+    if (cdB && cdB.roundWeights) {
+      cdB.roundWeights.forEach(function(w, i) {
+        if (w > 0) { hasCycleWeight = true; totalCycleWeight += w * (cdB.roundReps[i] || 0); }
+      });
+    }
+    var wCycleRow = document.getElementById('run-between-weight');
+    if (wCycleRow) {
+      if (hasCycleWeight) {
+        document.getElementById('run-between-weight-val').textContent = Math.round(totalCycleWeight * 10) / 10 + ' kg';
+        wCycleRow.classList.remove('hidden');
+      } else {
+        wCycleRow.classList.add('hidden');
+      }
     }
   }
 }
@@ -593,9 +642,17 @@ function showWorkoutDone() {
       return rated.length > 0 ? Math.round(rated.reduce(function(a,b){return a+b;},0)/rated.length) : 0;
     })();
     var diffHtml = diffLevel > 0 ? '<span class="diff-badge diff-badge-'+diffLevel+'" style="margin-top:0.35rem">'+DIFF_LABELS[diffLevel]+'</span>' : '';
+    var totalKg = 0, hasKg = false;
+    if (cd.roundWeights) {
+      cd.roundWeights.forEach(function(w, ri) {
+        if (w > 0) { hasKg = true; totalKg += w * (cd.roundReps[ri] || 0); }
+      });
+    }
+    var weightHtml = hasKg ? '<span class="summary-weight">' + (Math.round(totalKg * 10) / 10) + ' kg déplacés</span>' : '';
     html += '<div class="summary-row"><div class="summary-cycle">Cycle ' + (i+1) + '</div>';
     html += '<div class="summary-exercise">' + escHtml(name) + '</div>';
     html += '<div class="summary-stats"><span class="summary-reps">' + actual + (target ? ' / ' + target + ' reps' : ' reps') + '</span>' + pctHtml + '</div>';
+    if (weightHtml) html += '<div>' + weightHtml + '</div>';
     if (diffHtml) html += '<div>' + diffHtml + '</div>';
     html += '</div>';
   });

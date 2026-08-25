@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Timer App</title>
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
 
@@ -156,6 +156,10 @@
           <span class="rp-label">Restant pour l'objectif</span>
           <span id="run-remaining" class="rp-val">—</span>
         </div>
+        <div class="rp-row rp-weight-row">
+          <span class="rp-label">Poids (kg)</span>
+          <input type="number" id="run-weight-input" class="run-weight-input" inputmode="decimal" min="0" step="0.5" placeholder="—" oninput="onWeightChange(this)" />
+        </div>
       </div>
 
       <!-- REST BETWEEN CYCLES summary -->
@@ -167,6 +171,10 @@
             <span class="rest-stat-label">Reps / Objectif</span>
             <span id="run-between-progress" class="rest-stat-progress">—</span>
             <span id="run-between-pct" class="rest-stat-pct pct-none">—</span>
+          </div>
+          <div id="run-between-weight" class="rest-stat-row hidden">
+            <span class="rest-stat-label">Poids déplacé</span>
+            <span id="run-between-weight-val" class="rest-stat-val">—</span>
           </div>
         </div>
         <div class="rp-diff-row">
@@ -189,6 +197,9 @@
           <button class="rep-btn" onclick="changeRepInput(-1)">−</button>
           <span id="run-rep-val" class="rep-val">0</span>
           <button class="rep-btn" onclick="changeRepInput(1)">+</button>
+        </div>
+        <div id="run-weight-this-round" class="run-weight-total hidden">
+          <span id="run-weight-this-val"></span>
         </div>
         <div id="run-rest-summary" class="rest-summary hidden">
           <div class="rest-stat-row">
@@ -287,6 +298,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>
