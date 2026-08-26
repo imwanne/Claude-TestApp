@@ -1303,6 +1303,10 @@ function fastingFormatHMS(secs) {
   secs = Math.max(0, Math.round(secs));
   return pad(Math.floor(secs / 3600)) + ':' + pad(Math.floor((secs % 3600) / 60)) + ':' + pad(secs % 60);
 }
+function fastingFormatDT(ms) {
+  var d = new Date(ms);
+  return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
 function fastingFormatDur(secs) {
   var h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60);
   if (h > 0 && m > 0) return h + 'h ' + m + 'min';
@@ -1531,6 +1535,8 @@ function fastingShowActive(sess) {
   document.getElementById('fasting-done-overlay').classList.add('hidden');
   document.getElementById('fasting-action-row').classList.remove('hidden');
   document.getElementById('fasting-progress-fill').className = 'fasting-progress-fill' + (isFast ? '' : ' eat');
+  document.getElementById('fasting-start-dt').textContent = fastingFormatDT(sess.startTime);
+  document.getElementById('fasting-end-dt').textContent = fastingFormatDT(sess.startTime + sess.targetSecs * 1000);
   fastingTick();
   show('screen-fasting-active');
 }

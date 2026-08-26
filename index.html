@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link rel="stylesheet" href="style.css?v=21" />
 </head>
 <body>
 
@@ -394,6 +394,18 @@
 
       <div class="fasting-phase-badge fast" id="fasting-phase-badge">JEÛNE</div>
 
+      <div class="fasting-phase-dates" id="fasting-phase-dates">
+        <div class="fasting-date-row">
+          <span class="fasting-date-label">Début</span>
+          <span class="fasting-date-val" id="fasting-start-dt">—</span>
+        </div>
+        <div class="fasting-date-sep">→</div>
+        <div class="fasting-date-row">
+          <span class="fasting-date-label">Fin prévue</span>
+          <span class="fasting-date-val" id="fasting-end-dt">—</span>
+        </div>
+      </div>
+
       <div class="fasting-time-block">
         <div class="fasting-elapsed-label">Temps écoulé</div>
         <div class="fasting-elapsed" id="fasting-elapsed">00:00:00</div>
@@ -435,7 +447,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
