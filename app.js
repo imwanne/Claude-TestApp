@@ -1601,6 +1601,10 @@ function fastingDismissStop() {
   document.getElementById('fasting-stop-confirm').classList.add('hidden');
 }
 
+function fastingGoHome() {
+  show('screen-home');
+}
+
 // action: 'save' | 'abandon' | 'start-eat'
 function fastingEndPhase(action) {
   var sess = fastingLoadSession();
