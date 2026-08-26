@@ -278,4 +278,81 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .cel-weight { font-size:.82rem; color:#60a5fa; font-variant-numeric:tabular-nums; margin-top:.15rem; }
 .cel-hint { font-size:.68rem; color:#334155; margin-top:1.25rem; letter-spacing:.05em; }
 
+/* FASTING */
+.accent-fasting { border-color: #f59e0b44; color: #f59e0b; }
+.accent-fasting:active { background: #f59e0b11; }
+
+.fasting-mode-tabs { display: flex; background: #1e293b; border-radius: 12px; padding: 4px; margin-bottom: 1rem; gap: 4px; }
+.fasting-tab { flex: 1; padding: 0.6rem; border: none; background: transparent; color: #64748b; font-size: 0.9rem; font-weight: 600; border-radius: 9px; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.fasting-tab.active { background: #0f172a; color: #f8fafc; }
+
+.fasting-proto-display { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.fasting-proto-label { font-size: 2.8rem; font-weight: 800; font-variant-numeric: tabular-nums; color: #f8fafc; letter-spacing: -1px; line-height: 1; }
+.fasting-diff-badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.25rem 0.65rem; border-radius: 20px; border: 1px solid transparent; }
+.fasting-diff-badge.diff-0 { background: #1e3a2f; color: #4ade80; border-color: #22c55e44; }
+.fasting-diff-badge.diff-1 { background: #1e3a2f; color: #4ade80; border-color: #22c55e44; }
+.fasting-diff-badge.diff-2 { background: #1e3050; color: #60a5fa; border-color: #3b82f644; }
+.fasting-diff-badge.diff-3 { background: #2a2a10; color: #facc15; border-color: #eab30844; }
+.fasting-diff-badge.diff-4 { background: #2a1a10; color: #fb923c; border-color: #f9731644; }
+.fasting-diff-badge.diff-5 { background: #2a1010; color: #f87171; border-color: #ef444444; }
+
+.fasting-proto-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #334155; outline: none; margin: 0.35rem 0; cursor: pointer; }
+.fasting-proto-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; cursor: pointer; box-shadow: 0 2px 10px #f59e0b55; }
+.fasting-proto-slider::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; cursor: pointer; border: none; box-shadow: 0 2px 10px #f59e0b55; }
+.fasting-proto-sub { font-size: 0.78rem; color: #64748b; text-align: center; margin-top: 0.3rem; }
+
+.fasting-field-label { display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; letter-spacing: 0.07em; text-transform: uppercase; }
+.fasting-time-input { width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 1.2rem; font-weight: 600; outline: none; min-height: 48px; font-variant-numeric: tabular-nums; -webkit-appearance: none; }
+.fasting-time-input:focus { border-color: #f59e0b; }
+
+.fasting-week-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.fasting-section-title { font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase; }
+.fasting-gen-btn { font-size: 0.82rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #94a3b8; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.fasting-gen-btn:active { background: #1e293b; }
+.fasting-week-difficulty { font-size: 0.78rem; color: #64748b; margin-bottom: 0.65rem; min-height: 1.2em; }
+
+.fasting-week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.fasting-day-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 3px; background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.fasting-day-card.today { border-color: #f59e0b88; }
+.fasting-day-card:active { background: #1e293b; }
+.fasting-day-name { font-size: 0.58rem; font-weight: 700; color: #64748b; letter-spacing: 0.04em; text-transform: uppercase; }
+.fasting-day-proto { font-size: 0.62rem; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; }
+.fasting-day-diff { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.fasting-history-list { display: flex; flex-direction: column; gap: 0.55rem; }
+.fasting-hist-row { display: flex; align-items: center; gap: 0.65rem; }
+.fasting-hist-date { font-size: 0.72rem; font-weight: 600; color: #64748b; width: 32px; flex-shrink: 0; }
+.fasting-hist-phases { flex: 1; display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.fasting-hist-pill { font-size: 0.68rem; font-weight: 600; padding: 0.18rem 0.5rem; border-radius: 20px; }
+.fasting-hist-pill.fast { background: #1e3050; color: #60a5fa; }
+.fasting-hist-pill.eat { background: #1e3a2f; color: #4ade80; }
+.fasting-hist-empty { font-size: 0.72rem; color: #334155; font-style: italic; }
+
+.fasting-active-banner { display: flex; align-items: center; justify-content: space-between; background: #1e3050; border: 1px solid #3b82f655; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1rem; gap: 0.75rem; }
+.fasting-banner-info { display: flex; flex-direction: column; gap: 0.1rem; }
+.fasting-banner-phase { font-size: 0.68rem; font-weight: 700; color: #60a5fa; letter-spacing: 0.08em; text-transform: uppercase; }
+.fasting-banner-time { font-size: 1rem; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; }
+
+/* FASTING ACTIVE SCREEN */
+.fasting-active-body { display: flex; flex-direction: column; align-items: center; padding: 1.5rem 1.5rem 2rem; gap: 0; overflow-y: auto; }
+.fasting-phase-badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; padding: 0.3rem 1.1rem; border-radius: 20px; margin-bottom: 2rem; }
+.fasting-phase-badge.fast { background: #1e3050; color: #60a5fa; border: 1px solid #3b82f655; }
+.fasting-phase-badge.eat { background: #1e3a2f; color: #4ade80; border: 1px solid #22c55e44; }
+.fasting-time-block { display: flex; flex-direction: column; align-items: center; }
+.fasting-elapsed-label { font-size: 0.68rem; font-weight: 700; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.35rem; }
+.fasting-elapsed { font-size: clamp(2.8rem, 16vw, 4rem); font-weight: 800; font-variant-numeric: tabular-nums; color: #f8fafc; letter-spacing: -2px; line-height: 1; }
+.fasting-progress-bar { width: 100%; height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; margin: 1.5rem 0 1rem; }
+.fasting-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3b82f6, #60a5fa); transition: width 1s linear; }
+.fasting-progress-fill.eat { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.fasting-remaining-label { font-size: 0.68rem; font-weight: 700; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase; }
+.fasting-remaining { font-size: clamp(1.4rem, 8vw, 2rem); font-weight: 700; font-variant-numeric: tabular-nums; color: #94a3b8; margin-top: 0.25rem; }
+.fasting-message { font-size: 0.88rem; color: #64748b; text-align: center; font-style: italic; margin: 1.25rem 0; min-height: 1.4em; }
+.fasting-action-row { width: 100%; margin-top: auto; padding-top: 1rem; }
+
+.fasting-done-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.93); display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 50; backdrop-filter: blur(6px); }
+.fasting-done-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 2rem 1.5rem; width: 100%; max-width: 320px; text-align: center; }
+.fasting-done-emoji { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.fasting-done-title { font-size: 1.5rem; font-weight: 800; color: #f8fafc; margin-bottom: 0.5rem; }
+.fasting-done-sub { font-size: 0.9rem; color: #94a3b8; }
+
 .hidden { display: none !important; }

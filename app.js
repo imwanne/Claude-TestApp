@@ -1257,3 +1257,353 @@ function dismissCelebration() {
   var stage = document.getElementById('cel-stage');
   if (stage) stage.innerHTML = '';
 }
+
+// ========================
+// FASTING
+// ========================
+
+var FASTING_PROTOCOLS = [
+  { label: '0:24',  fast: 0,  eat: 24, diff: 0 },
+  { label: '12:12', fast: 12, eat: 12, diff: 1 },
+  { label: '16:8',  fast: 16, eat: 8,  diff: 2 },
+  { label: '18:6',  fast: 18, eat: 6,  diff: 3 },
+  { label: '20:4',  fast: 20, eat: 4,  diff: 4 },
+  { label: '24:0',  fast: 24, eat: 0,  diff: 5 },
+];
+var FASTING_DIFF_LABELS = ['Repos', 'Facile', 'Modéré', 'Modéré+', 'Intense', 'Extrême'];
+var FASTING_DIFF_COLORS = ['#4ade80', '#4ade80', '#60a5fa', '#facc15', '#fb923c', '#f87171'];
+var FASTING_DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+var FASTING_MESSAGES = [
+  { pct: 0,  msg: 'Bon début ! Le plus dur est de commencer.' },
+  { pct: 25, msg: 'Tu es lancé·e, reste concentré·e !' },
+  { pct: 50, msg: 'La moitié est faite, tu y es presque !' },
+  { pct: 75, msg: 'Plus que quelques heures, tiens bon !' },
+  { pct: 90, msg: 'Presque fini — courage, c\'est pour bientôt !' },
+];
+
+var fastingTimerInterval = null;
+
+function fastingLoadConfig() {
+  try { return JSON.parse(localStorage.getItem('fasting-config') || 'null') || { mode: 'classic', protocolIdx: 2, weekPlan: null }; } catch(e) { return { mode: 'classic', protocolIdx: 2, weekPlan: null }; }
+}
+function fastingLoadSession() {
+  try { return JSON.parse(localStorage.getItem('fasting-session') || 'null'); } catch(e) { return null; }
+}
+function fastingLoadHistory() {
+  try { return JSON.parse(localStorage.getItem('fasting-history') || '[]'); } catch(e) { return []; }
+}
+function fastingSaveConfig(cfg) { localStorage.setItem('fasting-config', JSON.stringify(cfg)); }
+function fastingSaveSession(sess) {
+  if (sess) localStorage.setItem('fasting-session', JSON.stringify(sess));
+  else localStorage.removeItem('fasting-session');
+}
+function fastingSaveHistory(hist) { localStorage.setItem('fasting-history', JSON.stringify(hist)); }
+
+function fastingFormatHMS(secs) {
+  secs = Math.max(0, Math.round(secs));
+  return pad(Math.floor(secs / 3600)) + ':' + pad(Math.floor((secs % 3600) / 60)) + ':' + pad(secs % 60);
+}
+function fastingFormatDur(secs) {
+  var h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60);
+  if (h > 0 && m > 0) return h + 'h ' + m + 'min';
+  if (h > 0) return h + 'h';
+  if (m > 0) return m + 'min';
+  return Math.round(secs) + 's';
+}
+function fastingTodayFrIdx() {
+  var d = new Date().getDay(); // 0=Sun
+  return d === 0 ? 6 : d - 1; // Mon=0, Sun=6
+}
+function fastingDateStr(d) {
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
+function fastingShowHome() {
+  var cfg = fastingLoadConfig();
+  var sess = fastingLoadSession();
+
+  // Active session banner
+  var banner = document.getElementById('f-active-banner');
+  if (sess) {
+    var elBan = Math.floor((Date.now() - sess.startTime) / 1000);
+    document.getElementById('f-banner-phase').textContent = sess.phase === 'fast' ? 'Jeûne en cours' : 'Repas en cours';
+    document.getElementById('f-banner-time').textContent = fastingFormatHMS(elBan) + ' écoulé';
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+
+  // Mode tabs
+  fastingSetTab(cfg.mode, true);
+
+  // Protocol slider
+  document.getElementById('f-proto-slider').value = cfg.protocolIdx;
+  fastingOnSlider(cfg.protocolIdx, true);
+
+  // Default last meal time = now
+  var now = new Date();
+  document.getElementById('f-last-meal').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+  // Week plan
+  if (!cfg.weekPlan) fastingGenerateWeekPlan(true);
+  else fastingRenderWeekPlan(cfg.weekPlan);
+
+  fastingRenderHistory();
+  show('screen-fasting-home');
+}
+
+function fastingSetTab(mode, silent) {
+  document.getElementById('ftab-classic').classList.toggle('active', mode === 'classic');
+  document.getElementById('ftab-random').classList.toggle('active', mode === 'random');
+  document.getElementById('fpanel-classic').classList.toggle('hidden', mode !== 'classic');
+  document.getElementById('fpanel-random').classList.toggle('hidden', mode !== 'random');
+  if (!silent) {
+    var cfg = fastingLoadConfig();
+    cfg.mode = mode;
+    fastingSaveConfig(cfg);
+  }
+}
+
+function fastingOnSlider(val, silent) {
+  val = parseInt(val, 10);
+  var proto = FASTING_PROTOCOLS[val];
+  document.getElementById('f-proto-label').textContent = proto.label;
+  var badge = document.getElementById('f-proto-badge');
+  badge.textContent = FASTING_DIFF_LABELS[proto.diff];
+  badge.className = 'fasting-diff-badge diff-' + proto.diff;
+  document.getElementById('f-proto-sub').textContent =
+    (proto.fast > 0 ? proto.fast + 'h de jeûne' : 'Pas de jeûne') +
+    ' · ' + proto.eat + 'h d\'alimentation';
+  if (!silent) {
+    var cfg = fastingLoadConfig();
+    cfg.protocolIdx = val;
+    fastingSaveConfig(cfg);
+  }
+}
+
+function fastingGenerateWeekPlan(silent) {
+  // Weighted random: bias toward 16:8 and 18:6, allow occasional rest and others
+  var weights = [1, 1, 3, 3, 2, 1];
+  var total = 11;
+  var plan = [];
+  for (var i = 0; i < 7; i++) {
+    var r = Math.floor(Math.random() * total);
+    var cumul = 0, chosen = 2;
+    for (var j = 0; j < weights.length; j++) { cumul += weights[j]; if (r < cumul) { chosen = j; break; } }
+    plan.push({ day: i, protocolIdx: chosen });
+  }
+  fastingRenderWeekPlan(plan);
+  if (!silent) {
+    var cfg = fastingLoadConfig();
+    cfg.weekPlan = plan;
+    fastingSaveConfig(cfg);
+  }
+  return plan;
+}
+
+function fastingRenderWeekPlan(plan) {
+  if (!plan) return;
+  var todayFr = fastingTodayFrIdx();
+  var grid = document.getElementById('f-week-grid');
+  var html = '';
+  var totalDiff = 0;
+  for (var i = 0; i < 7; i++) {
+    var entry = plan[i] || { day: i, protocolIdx: 2 };
+    var proto = FASTING_PROTOCOLS[entry.protocolIdx];
+    totalDiff += proto.diff;
+    var color = FASTING_DIFF_COLORS[proto.diff];
+    html += '<div class="fasting-day-card' + (i === todayFr ? ' today' : '') + '" onclick="fastingCycleProtocol(' + i + ')">' +
+      '<span class="fasting-day-name">' + FASTING_DAY_NAMES[i] + '</span>' +
+      '<span class="fasting-day-proto">' + proto.label + '</span>' +
+      '<span class="fasting-day-diff" style="background:' + color + '"></span>' +
+      '</div>';
+  }
+  grid.innerHTML = html;
+
+  var avg = totalDiff / 7;
+  var wLabel = avg < 1 ? 'Semaine repos' : avg < 2 ? 'Semaine facile' : avg < 2.8 ? 'Semaine modérée' : avg < 3.8 ? 'Semaine difficile' : 'Semaine intense';
+  document.getElementById('f-week-difficulty').textContent = wLabel;
+}
+
+function fastingCycleProtocol(dayIdx) {
+  var cfg = fastingLoadConfig();
+  if (!cfg.weekPlan) cfg.weekPlan = [];
+  while (cfg.weekPlan.length <= dayIdx) cfg.weekPlan.push({ day: cfg.weekPlan.length, protocolIdx: 2 });
+  cfg.weekPlan[dayIdx].protocolIdx = (cfg.weekPlan[dayIdx].protocolIdx + 1) % FASTING_PROTOCOLS.length;
+  fastingSaveConfig(cfg);
+  fastingRenderWeekPlan(cfg.weekPlan);
+}
+
+function fastingRenderHistory() {
+  var hist = fastingLoadHistory();
+  var container = document.getElementById('f-history-list');
+  var days = [];
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date();
+    d.setDate(d.getDate() - i);
+    var jsDay = d.getDay();
+    var frIdx = jsDay === 0 ? 6 : jsDay - 1;
+    var label = i === 0 ? 'Auj' : (i === 1 ? 'Hier' : FASTING_DAY_NAMES[frIdx]);
+    days.push({ dateStr: fastingDateStr(d), label: label, fast: null, eat: null });
+  }
+  hist.forEach(function(e) {
+    for (var i = 0; i < days.length; i++) {
+      if (days[i].dateStr === e.date) {
+        if (e.phase === 'fast') days[i].fast = e;
+        else if (e.phase === 'eat') days[i].eat = e;
+      }
+    }
+  });
+
+  var html = '';
+  days.forEach(function(day) {
+    html += '<div class="fasting-hist-row"><span class="fasting-hist-date">' + day.label + '</span><div class="fasting-hist-phases">';
+    if (day.fast || day.eat) {
+      if (day.fast) html += '<span class="fasting-hist-pill fast">' + fastingFormatDur(day.fast.durationSecs) + ' jeûne</span>';
+      if (day.eat && day.eat.durationSecs > 0) html += '<span class="fasting-hist-pill eat">' + fastingFormatDur(day.eat.durationSecs) + ' repas</span>';
+    } else {
+      html += '<span class="fasting-hist-empty">—</span>';
+    }
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function fastingStartFromMeal() {
+  var cfg = fastingLoadConfig();
+  var proto = FASTING_PROTOCOLS[cfg.protocolIdx];
+  if (proto.fast === 0) { alert('Protocole 0:24 : c\'est un jour d\'alimentation, pas de jeûne !'); return; }
+  var val = document.getElementById('f-last-meal').value;
+  if (!val) { alert('Veuillez indiquer l\'heure du dernier repas.'); return; }
+  var parts = val.split(':');
+  var now = new Date();
+  var mealMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +parts[0], +parts[1], 0, 0).getTime();
+  if (mealMs > Date.now()) mealMs -= 86400000; // yesterday
+  fastingBeginPhase('fast', proto.fast * 3600, proto, mealMs);
+}
+
+function fastingStartFromWeekPlan() {
+  var cfg = fastingLoadConfig();
+  var todayFr = fastingTodayFrIdx();
+  var plan = cfg.weekPlan || [];
+  var entry = plan[todayFr] || { day: todayFr, protocolIdx: 2 };
+  var proto = FASTING_PROTOCOLS[entry.protocolIdx];
+  if (proto.fast === 0) { alert('Aujourd\'hui est un jour de repos (0:24) — pas de jeûne prévu !'); return; }
+  cfg.protocolIdx = entry.protocolIdx;
+  fastingSaveConfig(cfg);
+  fastingSetTab('classic', true);
+  document.getElementById('f-proto-slider').value = entry.protocolIdx;
+  fastingOnSlider(entry.protocolIdx, true);
+}
+
+function fastingResume() {
+  var sess = fastingLoadSession();
+  if (!sess) return;
+  fastingShowActive(sess);
+  if (!fastingTimerInterval) fastingTimerInterval = setInterval(fastingTick, 1000);
+}
+
+function fastingAbandon() {
+  if (!confirm('Abandonner la session en cours ?')) return;
+  clearInterval(fastingTimerInterval);
+  fastingTimerInterval = null;
+  fastingSaveSession(null);
+  fastingShowHome();
+}
+
+function fastingBeginPhase(phase, targetSecs, proto, startTimeMs) {
+  clearInterval(fastingTimerInterval);
+  fastingTimerInterval = null;
+  var sess = { phase: phase, startTime: startTimeMs || Date.now(), targetSecs: targetSecs, protocol: proto };
+  fastingSaveSession(sess);
+  fastingShowActive(sess);
+  fastingTimerInterval = setInterval(fastingTick, 1000);
+}
+
+function fastingShowActive(sess) {
+  var isFast = sess.phase === 'fast';
+  document.getElementById('fasting-nav-title').textContent = isFast ? 'Jeûne en cours' : 'Repas en cours';
+  var badge = document.getElementById('fasting-phase-badge');
+  badge.textContent = isFast ? 'JEÛNE' : 'REPAS';
+  badge.className = 'fasting-phase-badge ' + (isFast ? 'fast' : 'eat');
+  document.getElementById('fasting-stop-btn').textContent = isFast ? 'Arrêter le jeûne' : 'Terminer le repas';
+  document.getElementById('fasting-stop-confirm').classList.add('hidden');
+  document.getElementById('fasting-done-overlay').classList.add('hidden');
+  document.getElementById('fasting-action-row').classList.remove('hidden');
+  document.getElementById('fasting-progress-fill').className = 'fasting-progress-fill' + (isFast ? '' : ' eat');
+  fastingTick();
+  show('screen-fasting-active');
+}
+
+function fastingTick() {
+  var sess = fastingLoadSession();
+  if (!sess) return;
+  var elapsed = Math.floor((Date.now() - sess.startTime) / 1000);
+  var remaining = Math.max(0, sess.targetSecs - elapsed);
+  var pct = sess.targetSecs > 0 ? Math.min(100, (elapsed / sess.targetSecs) * 100) : 100;
+
+  document.getElementById('fasting-elapsed').textContent = fastingFormatHMS(elapsed);
+  document.getElementById('fasting-remaining').textContent = fastingFormatHMS(remaining);
+  document.getElementById('fasting-progress-fill').style.width = pct + '%';
+
+  if (sess.phase === 'fast') {
+    var msg = FASTING_MESSAGES[0].msg;
+    for (var i = FASTING_MESSAGES.length - 1; i >= 0; i--) {
+      if (pct >= FASTING_MESSAGES[i].pct) { msg = FASTING_MESSAGES[i].msg; break; }
+    }
+    document.getElementById('fasting-message').textContent = msg;
+  } else {
+    document.getElementById('fasting-message').textContent = '';
+  }
+
+  if (remaining === 0 && document.getElementById('fasting-done-overlay').classList.contains('hidden')) {
+    clearInterval(fastingTimerInterval);
+    fastingTimerInterval = null;
+    fastingShowComplete(sess, elapsed);
+  }
+}
+
+function fastingShowComplete(sess, elapsed) {
+  var isFast = sess.phase === 'fast';
+  document.getElementById('fasting-done-title').textContent = isFast ? 'Jeûne terminé !' : 'Repas terminé !';
+  document.getElementById('fasting-done-sub').textContent = fastingFormatDur(elapsed || sess.targetSecs) + ' accomplis';
+  var eatBtn = document.getElementById('fasting-eat-btn');
+  if (isFast && sess.protocol && sess.protocol.eat > 0) eatBtn.classList.remove('hidden');
+  else eatBtn.classList.add('hidden');
+  document.getElementById('fasting-done-overlay').classList.remove('hidden');
+  document.getElementById('fasting-action-row').classList.add('hidden');
+}
+
+function fastingConfirmStop() {
+  document.getElementById('fasting-stop-confirm').classList.toggle('hidden');
+}
+function fastingDismissStop() {
+  document.getElementById('fasting-stop-confirm').classList.add('hidden');
+}
+
+function fastingEndPhase(startEating) {
+  var sess = fastingLoadSession();
+  clearInterval(fastingTimerInterval);
+  fastingTimerInterval = null;
+
+  if (sess) {
+    var elapsed = Math.floor((Date.now() - sess.startTime) / 1000);
+    var hist = fastingLoadHistory();
+    var d = new Date();
+    hist.push({ date: fastingDateStr(d), phase: sess.phase, durationSecs: elapsed, completed: elapsed >= sess.targetSecs });
+    fastingSaveHistory(hist);
+
+    if (startEating && sess.phase === 'fast' && sess.protocol && sess.protocol.eat > 0) {
+      fastingSaveSession(null);
+      fastingBeginPhase('eat', sess.protocol.eat * 3600, sess.protocol, null);
+      return;
+    }
+  }
+
+  fastingSaveSession(null);
+  fastingShowHome();
+}
+
+function fastingStartEating() {
+  fastingEndPhase(true);
+}
