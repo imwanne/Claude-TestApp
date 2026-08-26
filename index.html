@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=21" />
+  <link rel="stylesheet" href="style.css?v=22" />
 </head>
 <body>
 
@@ -319,8 +319,8 @@
     </div>
   </div>
 
-  <!-- FASTING HOME -->
-  <div id="screen-fasting-home" class="screen">
+  <!-- FASTING HISTORY (landing page) -->
+  <div id="screen-fasting-history" class="screen">
     <div class="nav-bar">
       <button class="back-btn" onclick="show('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <span class="nav-title">Fasting</span>
@@ -334,52 +334,64 @@
           <span class="fasting-banner-phase" id="f-banner-phase">Jeûne en cours</span>
           <span class="fasting-banner-time" id="f-banner-time">—</span>
         </div>
-        <button class="btn-primary" style="flex-shrink:0" onclick="fastingResume()">Reprendre</button>
+        <button class="btn-primary" style="flex-shrink:0;font-size:0.85rem;padding:0.5rem 1rem" onclick="fastingResume()">Reprendre</button>
       </div>
 
-      <!-- Mode tabs -->
-      <div class="fasting-mode-tabs">
-        <button class="fasting-tab active" id="ftab-classic" onclick="fastingSetTab('classic')">Classique</button>
-        <button class="fasting-tab" id="ftab-random" onclick="fastingSetTab('random')">Aléatoire</button>
+      <!-- Action buttons -->
+      <div class="fasting-action-btns">
+        <button class="btn-primary" onclick="fastingShowConfig()">Nouveau jeûne</button>
+        <button class="btn-secondary" onclick="fastingShowPlan()">Planifier la semaine</button>
       </div>
 
-      <!-- Classic panel -->
-      <div id="fpanel-classic">
-        <div class="card" style="margin-bottom:1rem">
-          <div class="fasting-proto-display">
-            <span id="f-proto-label" class="fasting-proto-label">16:8</span>
-            <span id="f-proto-badge" class="fasting-diff-badge diff-2">Modéré</span>
-          </div>
-          <input type="range" id="f-proto-slider" class="fasting-proto-slider" min="0" max="5" step="1" value="2" oninput="fastingOnSlider(this.value)" />
-          <div class="fasting-proto-sub" id="f-proto-sub">16h de jeûne · 8h d'alimentation</div>
+      <!-- History list -->
+      <div class="fasting-hist-section-title">Historique</div>
+      <div id="f-history-list" class="fasting-history-list"></div>
+
+    </div>
+  </div>
+
+  <!-- FASTING CONFIG (configure a single fast) -->
+  <div id="screen-fasting-config" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="show('screen-fasting-history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="nav-title">Nouveau jeûne</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div class="card" style="margin-bottom:1rem">
+        <div class="fasting-proto-display">
+          <span id="f-proto-label" class="fasting-proto-label">16:8</span>
+          <span id="f-proto-badge" class="fasting-diff-badge diff-2">Modéré</span>
         </div>
-        <div class="card" style="margin-bottom:1rem">
-          <label class="fasting-field-label" for="f-last-meal">Heure du dernier repas</label>
-          <input type="time" id="f-last-meal" class="fasting-time-input" />
-          <button class="btn-primary btn-full" style="margin-top:1rem" onclick="fastingStartFromMeal()">Démarrer le jeûne</button>
-        </div>
+        <input type="range" id="f-proto-slider" class="fasting-proto-slider" min="0" max="5" step="1" value="2" oninput="fastingOnSlider(this.value)" />
+        <div class="fasting-proto-sub" id="f-proto-sub">16h de jeûne · 8h d'alimentation</div>
       </div>
-
-      <!-- Random panel -->
-      <div id="fpanel-random" class="hidden">
-        <div class="card" style="margin-bottom:1rem">
-          <div class="fasting-week-header">
-            <span class="fasting-section-title">Plan de la semaine</span>
-            <button class="fasting-gen-btn" onclick="fastingGenerateWeekPlan(false)">Générer</button>
-          </div>
-          <div id="f-week-difficulty" class="fasting-week-difficulty"></div>
-          <div id="f-week-grid" class="fasting-week-grid"></div>
-          <p style="font-size:0.73rem;color:#475569;margin-top:0.6rem;text-align:center">Toucher un jour pour changer son protocole</p>
-          <button class="btn-primary btn-full" style="margin-top:0.75rem" onclick="fastingStartFromWeekPlan()">Commencer aujourd'hui</button>
-        </div>
-      </div>
-
-      <!-- History -->
       <div class="card">
-        <div class="fasting-section-title" style="margin-bottom:0.75rem">7 derniers jours</div>
-        <div id="f-history-list" class="fasting-history-list"></div>
+        <label class="fasting-field-label" for="f-last-meal">Heure du dernier repas</label>
+        <input type="time" id="f-last-meal" class="fasting-time-input" />
+        <button class="btn-primary btn-full" style="margin-top:1rem" onclick="fastingStartFromMeal()">Démarrer le jeûne</button>
       </div>
+    </div>
+  </div>
 
+  <!-- FASTING PLAN (7-day rolling plan) -->
+  <div id="screen-fasting-plan" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="show('screen-fasting-history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="nav-title">Plan semaine</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div class="card">
+        <div class="fasting-week-header">
+          <span class="fasting-section-title">7 prochains jours</span>
+          <button class="fasting-gen-btn" onclick="fastingGenerateWeekPlan(false)">Générer</button>
+        </div>
+        <div id="f-week-difficulty" class="fasting-week-difficulty"></div>
+        <div id="f-week-grid" class="fasting-week-grid"></div>
+        <p style="font-size:0.72rem;color:#475569;margin-top:0.65rem;text-align:center">Toucher un jour pour changer son protocole</p>
+        <button class="btn-primary btn-full" style="margin-top:0.9rem" onclick="fastingStartFromWeekPlan()">Commencer aujourd'hui</button>
+      </div>
     </div>
   </div>
 
@@ -394,7 +406,7 @@
 
       <div class="fasting-phase-badge fast" id="fasting-phase-badge">JEÛNE</div>
 
-      <div class="fasting-phase-dates" id="fasting-phase-dates">
+      <div class="fasting-phase-dates">
         <div class="fasting-date-row">
           <span class="fasting-date-label">Début</span>
           <span class="fasting-date-val" id="fasting-start-dt">—</span>
@@ -424,8 +436,10 @@
 
       <!-- Stop confirm inline -->
       <div id="fasting-stop-confirm" class="card hidden" style="width:100%;text-align:center;margin-bottom:1rem">
-        <p style="font-weight:600;color:#f1f5f9;margin-bottom:0.75rem">Arrêter le jeûne ?</p>
-        <button class="btn-danger btn-full" onclick="fastingEndPhase(false)">Oui, arrêter</button>
+        <p style="font-weight:600;color:#f1f5f9;margin-bottom:0.2rem" id="fasting-stop-title">Arrêter le jeûne ?</p>
+        <p style="font-size:0.78rem;color:#64748b;margin-bottom:0.85rem" id="fasting-stop-elapsed"></p>
+        <button class="btn-primary btn-full" onclick="fastingEndPhase('save')">Enregistrer le cycle</button>
+        <button class="btn-danger btn-full" style="margin-top:0.5rem" onclick="fastingEndPhase('abandon')">Abandonner le cycle</button>
         <button class="btn-secondary btn-full" style="margin-top:0.5rem" onclick="fastingDismissStop()">Continuer</button>
       </div>
 
@@ -442,12 +456,12 @@
         <div class="fasting-done-title" id="fasting-done-title">Jeûne terminé !</div>
         <div class="fasting-done-sub" id="fasting-done-sub"></div>
         <button class="btn-primary btn-full btn-large" style="margin-top:1.5rem" id="fasting-eat-btn" onclick="fastingStartEating()">Commencer le repas</button>
-        <button class="btn-secondary btn-full" style="margin-top:0.5rem" onclick="fastingEndPhase(false)">Terminer</button>
+        <button class="btn-secondary btn-full" style="margin-top:0.5rem" onclick="fastingEndPhase('save')" id="fasting-done-end-btn">Enregistrer le cycle</button>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=22"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
