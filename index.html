@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=23" />
+  <link rel="stylesheet" href="style.css?v=24" />
 </head>
 <body>
 
@@ -109,6 +109,132 @@
       <div id="preview-header" class="preview-header"></div>
       <div id="preview-cycles" class="param-list" style="margin-top:1rem"></div>
       <button class="btn-primary btn-full btn-large" style="margin-top:1rem" onclick="startPreviewWorkout()">Start Workout</button>
+      <button class="btn-secondary btn-full" style="margin-top:0.5rem" onclick="openMultiSetup()">Mode Multi (2 joueurs)</button>
+    </div>
+  </div>
+
+  <!-- WORKOUT MULTI SETUP -->
+  <div id="screen-workout-multi-setup" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="show('screen-workout-preview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="nav-title">Mode Multi</span>
+      <span class="nav-spacer"></span>
+    </div>
+    <div class="screen-body">
+      <div class="multi-setup-grid">
+        <div class="multi-setup-card" id="multi-setup-card-0">
+          <div class="multi-setup-label">Joueur 1</div>
+          <input type="text" id="multi-name-0" class="multi-name-input" placeholder="Nom..." maxlength="20" value="Joueur 1" />
+          <div class="multi-color-row" id="multi-colors-0">
+            <button class="multi-color-dot selected" style="background:#ef4444" onclick="multiSelectColor(0,0)"></button>
+            <button class="multi-color-dot" style="background:#3b82f6" onclick="multiSelectColor(0,1)"></button>
+            <button class="multi-color-dot" style="background:#22c55e" onclick="multiSelectColor(0,2)"></button>
+            <button class="multi-color-dot" style="background:#a855f7" onclick="multiSelectColor(0,3)"></button>
+            <button class="multi-color-dot" style="background:#f97316" onclick="multiSelectColor(0,4)"></button>
+            <button class="multi-color-dot" style="background:#ec4899" onclick="multiSelectColor(0,5)"></button>
+          </div>
+        </div>
+        <div class="multi-setup-card" id="multi-setup-card-1">
+          <div class="multi-setup-label">Joueur 2</div>
+          <input type="text" id="multi-name-1" class="multi-name-input" placeholder="Nom..." maxlength="20" value="Joueur 2" />
+          <div class="multi-color-row" id="multi-colors-1">
+            <button class="multi-color-dot" style="background:#ef4444" onclick="multiSelectColor(1,0)"></button>
+            <button class="multi-color-dot selected" style="background:#3b82f6" onclick="multiSelectColor(1,1)"></button>
+            <button class="multi-color-dot" style="background:#22c55e" onclick="multiSelectColor(1,2)"></button>
+            <button class="multi-color-dot" style="background:#a855f7" onclick="multiSelectColor(1,3)"></button>
+            <button class="multi-color-dot" style="background:#f97316" onclick="multiSelectColor(1,4)"></button>
+            <button class="multi-color-dot" style="background:#ec4899" onclick="multiSelectColor(1,5)"></button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary btn-full btn-large" style="margin-top:1.5rem" onclick="startMultiWorkoutRun()">Démarrer le workout</button>
+    </div>
+  </div>
+
+  <!-- WORKOUT MULTI RUN -->
+  <div id="screen-workout-multi-run" class="screen run-screen" style="position:relative">
+    <div class="multi-run-body" id="multi-run-body">
+
+      <!-- Active player zone -->
+      <div class="multi-zone multi-active-zone" id="multi-active-zone">
+        <div class="multi-player-bar">
+          <span class="multi-dot" id="multi-active-dot"></span>
+          <span class="multi-name-tag" id="multi-active-name-tag">Joueur 1</span>
+          <span class="multi-status-tag" id="multi-active-status">TRAVAILLE</span>
+        </div>
+        <div id="multi-phase-badge" class="phase-badge" style="margin-bottom:0.4rem">PRÉPARATION</div>
+        <div id="multi-timer" class="multi-timer-display">00:00</div>
+        <div id="multi-progress" class="tabata-progress" style="font-size:0.78rem"></div>
+        <div id="multi-work-panel" class="run-panel hidden" style="width:100%;margin-top:0.5rem">
+          <div class="rp-row">
+            <span class="rp-label">Ce round</span>
+            <span id="multi-suggest" class="rp-big">—</span>
+          </div>
+          <div class="rp-row rp-weight-row">
+            <span class="rp-label">Poids (kg)</span>
+            <input type="number" id="multi-active-weight" class="run-weight-input" inputmode="decimal" min="0" step="0.5" placeholder="—" oninput="multiOnActiveWeight(this)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="multi-divider"></div>
+
+      <!-- Inactive player zone -->
+      <div class="multi-zone multi-inactive-zone" id="multi-inactive-zone">
+        <div class="multi-player-bar">
+          <span class="multi-dot" id="multi-inactive-dot"></span>
+          <span class="multi-name-tag" id="multi-inactive-name-tag">Joueur 2</span>
+          <span class="multi-status-tag" id="multi-inactive-status">REPOS</span>
+        </div>
+        <div id="multi-inactive-entry" class="hidden" style="width:100%">
+          <div class="rep-stepper" style="margin-top:0.25rem">
+            <button class="rep-btn" onclick="multiChangeInactiveRep(-1)">−</button>
+            <span id="multi-inactive-rep-val" class="rep-val">0</span>
+            <button class="rep-btn" onclick="multiChangeInactiveRep(1)">+</button>
+          </div>
+          <div class="rp-row rp-weight-row" style="margin-top:0.4rem">
+            <span class="rp-label">Poids (kg)</span>
+            <input type="number" id="multi-inactive-weight" class="run-weight-input" inputmode="decimal" min="0" step="0.5" placeholder="—" oninput="multiOnInactiveWeight(this)" />
+          </div>
+          <div class="rp-diff-row" style="margin-top:0.5rem">
+            <span class="rp-label">Difficulté</span>
+            <div class="run-diff-selector" id="multi-diff-btns">
+              <button class="run-diff-btn diff-1" onclick="multiSetInactiveDiff(1)">1</button>
+              <button class="run-diff-btn diff-2" onclick="multiSetInactiveDiff(2)">2</button>
+              <button class="run-diff-btn diff-3" onclick="multiSetInactiveDiff(3)">3</button>
+              <button class="run-diff-btn diff-4" onclick="multiSetInactiveDiff(4)">4</button>
+              <button class="run-diff-btn diff-5" onclick="multiSetInactiveDiff(5)">5</button>
+            </div>
+          </div>
+        </div>
+        <div id="multi-inactive-waiting" class="multi-waiting-msg">Se prépare...</div>
+      </div>
+
+      <div id="multi-pause-info" class="run-pause-info hidden" style="text-align:center;padding:0.25rem 0">En pause</div>
+      <div class="tabata-actions" style="padding:0 1rem 1rem;flex-shrink:0">
+        <button class="btn-tertiary btn-large" onclick="multiSkipPhase()">Skip</button>
+        <button class="btn-tertiary btn-large" id="multi-pause-btn" onclick="multiTogglePause()">Pause</button>
+        <button class="btn-tertiary btn-large" onclick="multiAskStop()">Fin</button>
+      </div>
+    </div>
+
+    <!-- Overlay stop -->
+    <div id="multi-overlay-stop" class="run-overlay hidden">
+      <div class="run-overlay-card">
+        <p class="overlay-meta">Workout Multi en cours</p>
+        <h2 class="overlay-exercise" style="font-size:1.15rem;margin-bottom:0.25rem">Terminer le workout ?</h2>
+        <button class="btn-danger btn-full btn-large" onclick="multiConfirmStop()">Terminer</button>
+        <button class="btn-secondary btn-full" onclick="multiCancelStop()">Continuer</button>
+      </div>
+    </div>
+
+    <!-- Overlay done -->
+    <div id="multi-overlay-done" class="run-overlay-done hidden">
+      <div class="done-scroll">
+        <p class="done-title">Workout Complete !</p>
+        <div id="multi-done-content" class="multi-done-grid"></div>
+        <button class="btn-primary btn-full btn-large" style="margin-top:1.5rem" onclick="multiFinish()">Done</button>
+      </div>
     </div>
   </div>
 
@@ -461,7 +587,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

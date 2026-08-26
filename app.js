@@ -1651,3 +1651,348 @@ function fastingEndPhase(action) {
 function fastingStartEating() {
   fastingEndPhase('start-eat');
 }
+
+// ===================== MULTI MODE =====================
+
+var MULTI_COLORS = ['#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899'];
+var multiPlayers = [{name:'Joueur 1',color:'#ef4444'},{name:'Joueur 2',color:'#3b82f6'}];
+var multiSelectedColorIdx = [0, 1];
+var multiCurrentWorkout = null;
+var multiRunSeq = [];
+var multiRunIndex = 0;
+var multiRunRemaining = 0;
+var multiPhaseStartTime = 0;
+var multiPhaseTotalSecs = 0;
+var multiRunInterval = null;
+var multiIsPaused = false;
+var multiPauseStart = 0;
+var multiActiveWeightVal = 0;
+var multiLastWeight = [0, 0];
+var multiInactiveRepsVal = 0;
+var multiInactiveWeightVal = 0;
+var multiInactiveDiffVal = 3;
+var multiSessionData = [
+  {roundReps:[],roundWeights:[],roundDiffs:[]},
+  {roundReps:[],roundWeights:[],roundDiffs:[]}
+];
+
+function openMultiSetup() {
+  show('screen-workout-multi-setup');
+}
+
+function multiSelectColor(playerIdx, colorIdx) {
+  multiSelectedColorIdx[playerIdx] = colorIdx;
+  var row = document.getElementById('multi-colors-' + playerIdx);
+  row.querySelectorAll('.multi-color-dot').forEach(function(d, i) {
+    d.classList.toggle('selected', i === colorIdx);
+  });
+}
+
+function buildMultiSequence(w) {
+  var seq = [];
+  seq.push({name:'PREPARE', duration:w.prepare, color:'#eab308', activePlayer:null, round:0, cycle:0, totalRounds:0});
+  for (var c = 0; c < w.cycles; c++) {
+    var nRounds = (w.cycleRounds && w.cycleRounds[c]) ? w.cycleRounds[c] : w.rounds;
+    for (var r = 0; r < nRounds; r++) {
+      seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:0, round:r+1, cycle:c+1, totalRounds:nRounds});
+      seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:1, round:r+1, cycle:c+1, totalRounds:nRounds});
+    }
+    if (c < w.cycles - 1) {
+      seq.push({name:'REST_BETWEEN', duration:w.restBetweenCycles, color:'#eab308', activePlayer:null, round:0, cycle:c+1, totalRounds:0});
+    }
+  }
+  seq.push({name:'COOLDOWN', duration:w.cooldown, color:'#3b82f6', activePlayer:null, round:0, cycle:0, totalRounds:0});
+  return seq;
+}
+
+function startMultiWorkoutRun() {
+  var n0 = document.getElementById('multi-name-0').value.trim() || 'Joueur 1';
+  var n1 = document.getElementById('multi-name-1').value.trim() || 'Joueur 2';
+  multiPlayers = [
+    {name: n0, color: MULTI_COLORS[multiSelectedColorIdx[0]]},
+    {name: n1, color: MULTI_COLORS[multiSelectedColorIdx[1]]}
+  ];
+  multiCurrentWorkout = previewWorkout;
+  multiRunSeq = buildMultiSequence(multiCurrentWorkout);
+  multiRunIndex = 0;
+  multiIsPaused = false;
+  multiActiveWeightVal = 0;
+  multiLastWeight = [0, 0];
+  multiInactiveRepsVal = 0;
+  multiInactiveWeightVal = 0;
+  multiInactiveDiffVal = 3;
+  multiSessionData = [
+    {roundReps:[],roundWeights:[],roundDiffs:[]},
+    {roundReps:[],roundWeights:[],roundDiffs:[]}
+  ];
+  document.getElementById('multi-run-body').style.background = '';
+  show('screen-workout-multi-run');
+  multiProcessPhase();
+}
+
+function multiProcessPhase() {
+  clearInterval(multiRunInterval);
+  var ph = multiRunSeq[multiRunIndex];
+  if (!ph) { multiShowDone(); return; }
+  multiPhaseTotalSecs = ph.duration;
+  multiRunRemaining = ph.duration;
+  multiPhaseStartTime = Date.now();
+
+  var body = document.getElementById('multi-run-body');
+  body.style.background = ph.color + '08';
+
+  var badge = document.getElementById('multi-phase-badge');
+  var timer = document.getElementById('multi-timer');
+  var progress = document.getElementById('multi-progress');
+
+  if (ph.name === 'PREPARE') {
+    badge.textContent = 'PRÉPARATION';
+    badge.style.cssText = 'background:' + ph.color + '18;color:' + ph.color + ';border:1px solid ' + ph.color + '55';
+    progress.textContent = '';
+    multiSetBothBars();
+    document.getElementById('multi-work-panel').classList.add('hidden');
+    document.getElementById('multi-inactive-entry').classList.add('hidden');
+    document.getElementById('multi-inactive-waiting').classList.remove('hidden');
+    document.getElementById('multi-inactive-waiting').textContent = 'Prêts !';
+
+  } else if (ph.name === 'MULTI_WORK') {
+    var ap = ph.activePlayer;
+    var ip = 1 - ap;
+    var p = multiPlayers[ap];
+    var q = multiPlayers[ip];
+
+    badge.textContent = 'WORK';
+    badge.style.cssText = 'background:' + p.color + '18;color:' + p.color + ';border:1px solid ' + p.color + '55';
+    progress.textContent = 'Round ' + ph.round + ' / ' + ph.totalRounds + '  ·  Cycle ' + ph.cycle + ' / ' + multiCurrentWorkout.cycles;
+
+    multiSetZone('active', p, 'TRAVAILLE');
+    multiSetZone('inactive', q, 'REPOS');
+
+    document.getElementById('multi-active-zone').style.borderColor = p.color + '55';
+    document.getElementById('multi-inactive-zone').style.borderColor = q.color + '33';
+
+    var workPanel = document.getElementById('multi-work-panel');
+    workPanel.classList.remove('hidden');
+    var wInput = document.getElementById('multi-active-weight');
+    wInput.value = multiLastWeight[ap] > 0 ? multiLastWeight[ap] : '';
+    multiActiveWeightVal = multiLastWeight[ap];
+
+    // Inactive player data entry: show if they've done at least 1 round
+    var inactiveHasRound = (ap === 0 && ph.round > 1) || (ap === 1);
+    multiInactiveRepsVal = 0;
+    multiInactiveWeightVal = multiLastWeight[ip];
+    multiInactiveDiffVal = 3;
+    document.getElementById('multi-inactive-rep-val').textContent = '0';
+    var iwInput = document.getElementById('multi-inactive-weight');
+    iwInput.value = multiLastWeight[ip] > 0 ? multiLastWeight[ip] : '';
+    multiUpdateInactiveDiff();
+
+    if (inactiveHasRound) {
+      document.getElementById('multi-inactive-entry').classList.remove('hidden');
+      document.getElementById('multi-inactive-waiting').classList.add('hidden');
+    } else {
+      document.getElementById('multi-inactive-entry').classList.add('hidden');
+      document.getElementById('multi-inactive-waiting').classList.remove('hidden');
+      document.getElementById('multi-inactive-waiting').textContent = q.name + ' se prépare...';
+    }
+
+    multiSetSuggest(ap);
+
+  } else if (ph.name === 'REST_BETWEEN') {
+    badge.textContent = 'REPOS';
+    badge.style.cssText = 'background:' + ph.color + '18;color:' + ph.color + ';border:1px solid ' + ph.color + '55';
+    progress.textContent = 'Cycle ' + ph.cycle + ' terminé';
+    document.getElementById('multi-work-panel').classList.add('hidden');
+    document.getElementById('multi-inactive-entry').classList.add('hidden');
+    document.getElementById('multi-inactive-waiting').classList.remove('hidden');
+    document.getElementById('multi-inactive-waiting').textContent = 'Repos entre cycles';
+    multiSetBothBars();
+
+  } else if (ph.name === 'COOLDOWN') {
+    badge.textContent = 'COOLDOWN';
+    badge.style.cssText = 'background:#3b82f618;color:#3b82f6;border:1px solid #3b82f655';
+    progress.textContent = '';
+    document.getElementById('multi-work-panel').classList.add('hidden');
+    document.getElementById('multi-inactive-entry').classList.add('hidden');
+    document.getElementById('multi-inactive-waiting').classList.remove('hidden');
+    document.getElementById('multi-inactive-waiting').textContent = 'Récupération 💪';
+    multiSetBothBars();
+  }
+
+  timer.textContent = formatMmSs(ph.duration);
+  multiRunInterval = setInterval(multiTick, 1000);
+}
+
+function multiSetZone(which, player, status) {
+  document.getElementById('multi-' + which + '-dot').style.background = player.color;
+  document.getElementById('multi-' + which + '-name-tag').textContent = player.name;
+  var statusEl = document.getElementById('multi-' + which + '-status');
+  statusEl.textContent = status;
+  statusEl.style.color = player.color;
+}
+
+function multiSetBothBars() {
+  multiSetZone('active', multiPlayers[0], '');
+  multiSetZone('inactive', multiPlayers[1], '');
+  document.getElementById('multi-active-zone').style.borderColor = multiPlayers[0].color + '33';
+  document.getElementById('multi-inactive-zone').style.borderColor = multiPlayers[1].color + '33';
+}
+
+function multiSetSuggest(ap) {
+  var sd = multiSessionData[ap];
+  var doneReps = sd.roundReps.reduce(function(a,b){return a+b;}, 0);
+  document.getElementById('multi-suggest').textContent = doneReps > 0 ? '+ ' + doneReps + ' reps' : '—';
+}
+
+function multiTick() {
+  var elapsed = Math.floor((Date.now() - multiPhaseStartTime) / 1000);
+  multiRunRemaining = Math.max(0, multiPhaseTotalSecs - elapsed);
+  document.getElementById('multi-timer').textContent = formatMmSs(multiRunRemaining);
+  if (multiRunRemaining <= 0) {
+    clearInterval(multiRunInterval);
+    multiRunInterval = null;
+    setTimeout(function() { multiAdvancePhase(); }, 320);
+  }
+}
+
+function multiAdvancePhase() {
+  clearInterval(multiRunInterval);
+  multiRunInterval = null;
+  var ph = multiRunSeq[multiRunIndex];
+
+  if (ph && ph.name === 'MULTI_WORK') {
+    var ap = ph.activePlayer;
+    var ip = 1 - ap;
+    multiLastWeight[ap] = multiActiveWeightVal;
+    var inactiveHasRound = (ap === 0 && ph.round > 1) || (ap === 1);
+    if (inactiveHasRound) {
+      multiSessionData[ip].roundReps.push(multiInactiveRepsVal);
+      multiSessionData[ip].roundWeights.push(multiInactiveWeightVal || multiLastWeight[ip]);
+      multiSessionData[ip].roundDiffs.push(multiInactiveDiffVal);
+    }
+  }
+
+  multiRunIndex++;
+  if (multiRunIndex >= multiRunSeq.length) { multiShowDone(); return; }
+  multiProcessPhase();
+}
+
+function multiUpdateInactiveDiff() {
+  document.querySelectorAll('#multi-diff-btns .run-diff-btn').forEach(function(b, i) {
+    b.classList.toggle('active', i + 1 === multiInactiveDiffVal);
+  });
+}
+
+function multiOnActiveWeight(el) {
+  multiActiveWeightVal = parseFloat(el.value) || 0;
+}
+
+function multiOnInactiveWeight(el) {
+  multiInactiveWeightVal = parseFloat(el.value) || 0;
+}
+
+function multiChangeInactiveRep(delta) {
+  multiInactiveRepsVal = Math.max(0, multiInactiveRepsVal + delta);
+  document.getElementById('multi-inactive-rep-val').textContent = multiInactiveRepsVal;
+}
+
+function multiSetInactiveDiff(level) {
+  multiInactiveDiffVal = level;
+  multiUpdateInactiveDiff();
+}
+
+function multiTogglePause() {
+  if (multiIsPaused) {
+    multiPhaseStartTime += Date.now() - multiPauseStart;
+    multiIsPaused = false;
+    multiRunInterval = setInterval(multiTick, 1000);
+    var btn = document.getElementById('multi-pause-btn');
+    btn.textContent = 'Pause';
+    btn.classList.remove('btn-paused');
+    document.getElementById('multi-pause-info').classList.add('hidden');
+  } else {
+    clearInterval(multiRunInterval);
+    multiRunInterval = null;
+    multiIsPaused = true;
+    multiPauseStart = Date.now();
+    var btn = document.getElementById('multi-pause-btn');
+    btn.textContent = 'Reprendre';
+    btn.classList.add('btn-paused');
+    document.getElementById('multi-pause-info').classList.remove('hidden');
+  }
+}
+
+function multiSkipPhase() {
+  clearInterval(multiRunInterval);
+  multiRunInterval = null;
+  multiAdvancePhase();
+}
+
+function multiAskStop() {
+  clearInterval(multiRunInterval);
+  multiRunInterval = null;
+  document.getElementById('multi-overlay-stop').classList.remove('hidden');
+}
+
+function multiCancelStop() {
+  document.getElementById('multi-overlay-stop').classList.add('hidden');
+  if (!multiIsPaused) {
+    multiPhaseStartTime = Date.now() - (multiPhaseTotalSecs - multiRunRemaining) * 1000;
+    multiRunInterval = setInterval(multiTick, 1000);
+  }
+}
+
+function multiConfirmStop() {
+  document.getElementById('multi-overlay-stop').classList.add('hidden');
+  multiShowDone();
+}
+
+function multiShowDone() {
+  clearInterval(multiRunInterval);
+  multiRunInterval = null;
+
+  // Commit any uncommitted inactive data from the last phase
+  var prevPh = multiRunIndex > 0 ? multiRunSeq[multiRunIndex - 1] : null;
+  if (prevPh && prevPh.name === 'MULTI_WORK') {
+    var ap = prevPh.activePlayer;
+    var ip = 1 - ap;
+    multiLastWeight[ap] = multiActiveWeightVal;
+    var inactiveHasRound = (ap === 0 && prevPh.round > 1) || (ap === 1);
+    if (inactiveHasRound && multiInactiveRepsVal > 0) {
+      multiSessionData[ip].roundReps.push(multiInactiveRepsVal);
+      multiSessionData[ip].roundWeights.push(multiInactiveWeightVal || multiLastWeight[ip]);
+      multiSessionData[ip].roundDiffs.push(multiInactiveDiffVal);
+    }
+    // Commit active player's last round (no reps tracked for them yet in the last phase)
+  }
+
+  var html = '';
+  for (var p = 0; p < 2; p++) {
+    var player = multiPlayers[p];
+    var sd = multiSessionData[p];
+    var totalReps = sd.roundReps.reduce(function(a,b){return a+b;}, 0);
+    var totalWeight = 0;
+    for (var i = 0; i < sd.roundReps.length; i++) {
+      totalWeight += (sd.roundWeights[i] || 0) * (sd.roundReps[i] || 0);
+    }
+    var diffs = sd.roundDiffs.filter(function(d){return d>0;});
+    var avgDiff = diffs.length > 0 ? (diffs.reduce(function(a,b){return a+b;},0) / diffs.length).toFixed(1) : '—';
+
+    html += '<div class="multi-done-card" style="border-color:' + player.color + '55">';
+    html += '<div class="multi-done-header" style="color:' + player.color + '">' + player.name + '</div>';
+    html += '<div class="multi-done-stat"><span>Reps totales</span><span class="multi-done-val">' + totalReps + '</span></div>';
+    if (totalWeight > 0) {
+      html += '<div class="multi-done-stat"><span>Poids déplacé</span><span class="multi-done-val">' + Math.round(totalWeight) + ' kg</span></div>';
+    }
+    html += '<div class="multi-done-stat"><span>Diff. moy.</span><span class="multi-done-val">' + avgDiff + '</span></div>';
+    html += '</div>';
+  }
+
+  document.getElementById('multi-done-content').innerHTML = html;
+  document.getElementById('multi-overlay-done').classList.remove('hidden');
+}
+
+function multiFinish() {
+  document.getElementById('multi-overlay-done').classList.add('hidden');
+  show('screen-workouts');
+}
