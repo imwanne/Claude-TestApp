@@ -1670,6 +1670,10 @@ var MULTI_COLORS = ['#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899']
 var multiPlayers = [{name:'Joueur 1',color:'#ef4444'},{name:'Joueur 2',color:'#3b82f6'}];
 var multiSelectedColorIdx = [0, 1];
 var multiStartingPlayer = 0;
+var multiTargetReps = [0, 0];
+var multiTotalTargetReps = [0, 0];
+var multiRbReps = [0, 0];
+var multiRbWeights = [0, 0];
 var multiCurrentWorkout = null;
 var multiRunSeq = [];
 var multiRunIndex = 0;
@@ -1708,6 +1712,41 @@ function updateMultiStarterLabels() {
   document.getElementById('multi-starter-1').textContent = n1;
 }
 
+function multiConfirmCycleStart() {
+  multiTargetReps[0] = parseInt(document.getElementById('multi-cs-reps-0').value) || 0;
+  multiTargetReps[1] = parseInt(document.getElementById('multi-cs-reps-1').value) || 0;
+  multiTotalTargetReps[0] += multiTargetReps[0];
+  multiTotalTargetReps[1] += multiTargetReps[1];
+  document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
+  multiRunIndex++;
+  multiProcessPhase();
+}
+
+function multiRbChangeRep(pi, delta) {
+  multiRbReps[pi] = Math.max(0, multiRbReps[pi] + delta);
+  document.getElementById('multi-rb-rep-' + pi).textContent = multiRbReps[pi];
+  multiRbUpdateProgress(pi);
+}
+
+function multiRbSetWeight(pi, el) {
+  multiRbWeights[pi] = parseFloat(el.value) || 0;
+}
+
+function multiRbUpdateProgress(pi) {
+  var target = multiTargetReps[pi];
+  var prev = multiSessionData[pi].roundReps.reduce(function(a, b) { return a + b; }, 0);
+  var total = prev + multiRbReps[pi];
+  var el = document.getElementById('multi-rb-progress-' + pi);
+  if (target > 0) {
+    var pct = Math.round(total / target * 100);
+    el.textContent = total + ' / ' + target + ' reps (' + pct + '%)';
+    el.style.color = pct >= 100 ? '#22c55e' : pct >= 70 ? '#eab308' : '#94a3b8';
+  } else {
+    el.textContent = total > 0 ? total + ' reps' : '';
+    el.style.color = '';
+  }
+}
+
 function multiSelectColor(playerIdx, colorIdx) {
   multiSelectedColorIdx[playerIdx] = colorIdx;
   var row = document.getElementById('multi-colors-' + playerIdx);
@@ -1723,16 +1762,16 @@ function buildMultiSequence(w, firstPlayer) {
   seq.push({name:'PREPARE', duration:w.prepare, color:'#eab308', activePlayer:null, round:0, cycle:0, totalRounds:0});
   for (var c = 0; c < w.cycles; c++) {
     var nRounds = (w.cycleRounds && w.cycleRounds[c]) ? w.cycleRounds[c] : w.rounds;
+    var cname = (w.cycleNames && w.cycleNames[c]) || '';
+    var defReps = (w.cycleTargetReps && w.cycleTargetReps[c]) || 0;
+    seq.push({name:'MULTI_CYCLE_START', cycle:c+1, totalCycles:w.cycles, cycleName:cname, defaultTargetReps:defReps});
     for (var r = 0; r < nRounds; r++) {
       seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:first, round:r+1, cycle:c+1, totalRounds:nRounds});
       seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:second, round:r+1, cycle:c+1, totalRounds:nRounds});
-      var isVeryLastRound = (c === w.cycles - 1) && (r === nRounds - 1);
-      if (!isVeryLastRound) {
-        var isLastInCycle = (r === nRounds - 1);
-        seq.push({name:'ROUND_BREAK', isLastInCycle:isLastInCycle,
-          nextLabel: isLastInCycle ? 'Démarrer la récupération' : 'Round ' + (r + 2),
-          round:r+1, cycle:c+1, totalRounds:nRounds});
-      }
+      var isLastCycle = (c === w.cycles - 1);
+      var isLastRound = (r === nRounds - 1);
+      var nextLabel = (isLastCycle && isLastRound) ? 'Terminer' : (isLastRound ? 'Démarrer la récupération' : 'Round ' + (r + 2));
+      seq.push({name:'ROUND_BREAK', nextLabel:nextLabel, round:r+1, cycle:c+1, totalRounds:nRounds});
     }
     if (c < w.cycles - 1) {
       seq.push({name:'REST_BETWEEN', duration:w.restBetweenCycles, color:'#eab308', activePlayer:null, round:0, cycle:c+1, totalRounds:0});
@@ -1755,12 +1794,13 @@ function startMultiWorkoutRun() {
   multiIsPaused = false;
   multiActiveWeightVal = 0;
   multiLastWeight = [0, 0];
-  multiInactiveRepsVal = 0;
-  multiInactiveWeightVal = 0;
-  multiInactiveDiffVal = 3;
+  multiTargetReps = [0, 0];
+  multiTotalTargetReps = [0, 0];
+  multiRbReps = [0, 0];
+  multiRbWeights = [0, 0];
   multiSessionData = [
-    {roundReps:[],roundWeights:[],roundDiffs:[]},
-    {roundReps:[],roundWeights:[],roundDiffs:[]}
+    {roundReps:[],roundWeights:[]},
+    {roundReps:[],roundWeights:[]}
   ];
   document.getElementById('multi-run-body').style.background = '';
   show('screen-workout-multi-run');
@@ -1792,6 +1832,21 @@ function multiProcessPhase() {
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Prêts !';
 
+  } else if (ph.name === 'MULTI_CYCLE_START') {
+    document.getElementById('multi-cs-meta').textContent = 'Cycle ' + ph.cycle + ' / ' + ph.totalCycles;
+    var csName = document.getElementById('multi-cs-name');
+    csName.textContent = ph.cycleName;
+    csName.classList.toggle('hidden', !ph.cycleName);
+    for (var pi = 0; pi < 2; pi++) {
+      var plc = multiPlayers[pi];
+      document.getElementById('multi-cs-dot-' + pi).style.background = plc.color;
+      document.getElementById('multi-cs-pname-' + pi).textContent = plc.name;
+      document.getElementById('multi-cs-reps-' + pi).value = ph.defaultTargetReps > 0 ? ph.defaultTargetReps : '';
+    }
+    document.getElementById('multi-overlay-cycle-start').classList.remove('hidden');
+    multiSetBothBars();
+    return;
+
   } else if (ph.name === 'MULTI_WORK') {
     var ap = ph.activePlayer;
     var ip = 1 - ap;
@@ -1814,26 +1869,9 @@ function multiProcessPhase() {
     wInput.value = multiLastWeight[ap] > 0 ? multiLastWeight[ap] : '';
     multiActiveWeightVal = multiLastWeight[ap];
 
-    // Inactive player data entry: show if they've done at least 1 round
-    var inactiveHasRound = (ap !== multiStartingPlayer) || (ph.round > 1);
-    multiInactiveRepsVal = 0;
-    multiInactiveWeightVal = multiLastWeight[ip];
-    multiInactiveDiffVal = 3;
-    document.getElementById('multi-inactive-rep-val').textContent = '0';
-    var iwInput = document.getElementById('multi-inactive-weight');
-    iwInput.value = multiLastWeight[ip] > 0 ? multiLastWeight[ip] : '';
-    multiUpdateInactiveDiff();
-
-    if (inactiveHasRound) {
-      document.getElementById('multi-inactive-entry').classList.remove('hidden');
-      document.getElementById('multi-inactive-waiting').classList.add('hidden');
-    } else {
-      document.getElementById('multi-inactive-entry').classList.add('hidden');
-      document.getElementById('multi-inactive-waiting').classList.remove('hidden');
-      document.getElementById('multi-inactive-waiting').textContent = q.name + ' se prépare...';
-    }
-
-    multiSetSuggest(ap);
+    document.getElementById('multi-inactive-entry').classList.add('hidden');
+    document.getElementById('multi-inactive-waiting').classList.remove('hidden');
+    document.getElementById('multi-inactive-waiting').textContent = q.name + ' en repos...';
 
   } else if (ph.name === 'REST_BETWEEN') {
     badge.textContent = 'REPOS';
@@ -1858,6 +1896,17 @@ function multiProcessPhase() {
   } else if (ph.name === 'ROUND_BREAK') {
     document.getElementById('multi-rb-meta').textContent = 'Round ' + ph.round + ' / ' + ph.totalRounds + ' terminé';
     document.getElementById('multi-rb-btn').textContent = ph.nextLabel + ' →';
+    multiRbReps = [0, 0];
+    multiRbWeights = [multiLastWeight[0], multiLastWeight[1]];
+    for (var rbi = 0; rbi < 2; rbi++) {
+      var rbp = multiPlayers[rbi];
+      document.getElementById('multi-rb-dot-' + rbi).style.background = rbp.color;
+      document.getElementById('multi-rb-name-' + rbi).textContent = rbp.name;
+      document.getElementById('multi-rb-rep-' + rbi).textContent = '0';
+      var rbw = document.getElementById('multi-rb-weight-' + rbi);
+      rbw.value = multiLastWeight[rbi] > 0 ? multiLastWeight[rbi] : '';
+      multiRbUpdateProgress(rbi);
+    }
     document.getElementById('multi-overlay-round-break').classList.remove('hidden');
     document.getElementById('multi-work-panel').classList.add('hidden');
     document.getElementById('multi-inactive-entry').classList.add('hidden');
@@ -1905,17 +1954,17 @@ function multiAdvancePhase() {
   clearInterval(multiRunInterval);
   multiRunInterval = null;
   document.getElementById('multi-overlay-round-break').classList.add('hidden');
+  document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
   var ph = multiRunSeq[multiRunIndex];
 
   if (ph && ph.name === 'MULTI_WORK') {
-    var ap = ph.activePlayer;
-    var ip = 1 - ap;
-    multiLastWeight[ap] = multiActiveWeightVal;
-    var inactiveHasRound = (ap !== multiStartingPlayer) || (ph.round > 1);
-    if (inactiveHasRound) {
-      multiSessionData[ip].roundReps.push(multiInactiveRepsVal);
-      multiSessionData[ip].roundWeights.push(multiInactiveWeightVal || multiLastWeight[ip]);
-      multiSessionData[ip].roundDiffs.push(multiInactiveDiffVal);
+    multiLastWeight[ph.activePlayer] = multiActiveWeightVal;
+  } else if (ph && ph.name === 'ROUND_BREAK') {
+    for (var pi = 0; pi < 2; pi++) {
+      multiSessionData[pi].roundReps.push(multiRbReps[pi]);
+      var w = multiRbWeights[pi] || multiLastWeight[pi];
+      multiSessionData[pi].roundWeights.push(w);
+      multiLastWeight[pi] = w;
     }
   }
 
@@ -1949,6 +1998,8 @@ function multiSetInactiveDiff(level) {
 }
 
 function multiTogglePause() {
+  var ph = multiRunSeq[multiRunIndex];
+  if (ph && (ph.name === 'MULTI_CYCLE_START' || ph.name === 'ROUND_BREAK')) return;
   if (multiIsPaused) {
     multiPhaseStartTime += Date.now() - multiPauseStart;
     multiIsPaused = false;
@@ -1972,6 +2023,14 @@ function multiTogglePause() {
 function multiSkipPhase() {
   clearInterval(multiRunInterval);
   multiRunInterval = null;
+  var ph = multiRunSeq[multiRunIndex];
+  if (ph && ph.name === 'MULTI_CYCLE_START') {
+    multiTargetReps = [0, 0];
+    document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
+    multiRunIndex++;
+    multiProcessPhase();
+    return;
+  }
   multiAdvancePhase();
 }
 
@@ -1983,6 +2042,8 @@ function multiAskStop() {
 
 function multiCancelStop() {
   document.getElementById('multi-overlay-stop').classList.add('hidden');
+  var ph = multiRunSeq[multiRunIndex];
+  if (ph && (ph.name === 'MULTI_CYCLE_START' || ph.name === 'ROUND_BREAK')) return;
   if (!multiIsPaused) {
     multiPhaseStartTime = Date.now() - (multiPhaseTotalSecs - multiRunRemaining) * 1000;
     multiRunInterval = setInterval(multiTick, 1000);
@@ -1998,21 +2059,7 @@ function multiShowDone() {
   clearInterval(multiRunInterval);
   multiRunInterval = null;
   document.getElementById('multi-overlay-round-break').classList.add('hidden');
-
-  // Commit any uncommitted inactive data from the last phase
-  var prevPh = multiRunIndex > 0 ? multiRunSeq[multiRunIndex - 1] : null;
-  if (prevPh && prevPh.name === 'MULTI_WORK') {
-    var ap = prevPh.activePlayer;
-    var ip = 1 - ap;
-    multiLastWeight[ap] = multiActiveWeightVal;
-    var inactiveHasRound = (ap !== multiStartingPlayer) || (prevPh.round > 1);
-    if (inactiveHasRound && multiInactiveRepsVal > 0) {
-      multiSessionData[ip].roundReps.push(multiInactiveRepsVal);
-      multiSessionData[ip].roundWeights.push(multiInactiveWeightVal || multiLastWeight[ip]);
-      multiSessionData[ip].roundDiffs.push(multiInactiveDiffVal);
-    }
-    // Commit active player's last round (no reps tracked for them yet in the last phase)
-  }
+  document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
 
   var html = '';
   for (var p = 0; p < 2; p++) {
@@ -2023,16 +2070,20 @@ function multiShowDone() {
     for (var i = 0; i < sd.roundReps.length; i++) {
       totalWeight += (sd.roundWeights[i] || 0) * (sd.roundReps[i] || 0);
     }
-    var diffs = sd.roundDiffs.filter(function(d){return d>0;});
-    var avgDiff = diffs.length > 0 ? (diffs.reduce(function(a,b){return a+b;},0) / diffs.length).toFixed(1) : '—';
+    var target = multiTotalTargetReps[p];
+    var pct = target > 0 ? Math.round(totalReps / target * 100) : null;
+    var repsText = target > 0 ? totalReps + ' / ' + target : String(totalReps);
+    var pctColor = pct !== null ? (pct >= 100 ? '#22c55e' : pct >= 70 ? '#eab308' : '#ef4444') : '#f1f5f9';
 
     html += '<div class="multi-done-card" style="border-color:' + player.color + '55">';
     html += '<div class="multi-done-header" style="color:' + player.color + '">' + player.name + '</div>';
-    html += '<div class="multi-done-stat"><span>Reps totales</span><span class="multi-done-val">' + totalReps + '</span></div>';
+    html += '<div class="multi-done-stat"><span>Reps totales</span><span class="multi-done-val">' + repsText + '</span></div>';
+    if (pct !== null) {
+      html += '<div class="multi-done-stat"><span>Objectif</span><span class="multi-done-val" style="color:' + pctColor + '">' + pct + '%</span></div>';
+    }
     if (totalWeight > 0) {
       html += '<div class="multi-done-stat"><span>Poids déplacé</span><span class="multi-done-val">' + Math.round(totalWeight) + ' kg</span></div>';
     }
-    html += '<div class="multi-done-stat"><span>Diff. moy.</span><span class="multi-done-val">' + avgDiff + '</span></div>';
     html += '</div>';
   }
 

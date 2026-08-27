@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=26" />
+  <link rel="stylesheet" href="style.css?v=27" />
 </head>
 <body>
 
@@ -235,12 +235,74 @@
       </div>
     </div>
 
+    <!-- Overlay cycle start -->
+    <div id="multi-overlay-cycle-start" class="run-overlay hidden">
+      <div class="run-overlay-card">
+        <p class="overlay-meta" id="multi-cs-meta">Cycle 1 / 1</p>
+        <p id="multi-cs-name" class="overlay-exercise hidden" style="font-size:0.95rem;margin-bottom:0.5rem"></p>
+        <p style="font-size:0.78rem;color:#64748b;margin-bottom:0.75rem">Objectif de reps pour ce cycle</p>
+        <div class="multi-cs-player-row">
+          <div class="multi-player-bar" style="margin-bottom:0.4rem">
+            <span class="multi-dot" id="multi-cs-dot-0"></span>
+            <span id="multi-cs-pname-0" style="font-weight:700;font-size:0.88rem;color:#f1f5f9">Joueur 1</span>
+          </div>
+          <div class="multi-cs-field">
+            <label class="multi-cs-label">Reps objectif</label>
+            <input type="number" id="multi-cs-reps-0" class="multi-cs-input" inputmode="numeric" min="0" placeholder="0" />
+          </div>
+        </div>
+        <div class="multi-cs-player-row">
+          <div class="multi-player-bar" style="margin-bottom:0.4rem">
+            <span class="multi-dot" id="multi-cs-dot-1"></span>
+            <span id="multi-cs-pname-1" style="font-weight:700;font-size:0.88rem;color:#f1f5f9">Joueur 2</span>
+          </div>
+          <div class="multi-cs-field">
+            <label class="multi-cs-label">Reps objectif</label>
+            <input type="number" id="multi-cs-reps-1" class="multi-cs-input" inputmode="numeric" min="0" placeholder="0" />
+          </div>
+        </div>
+        <button class="btn-primary btn-full btn-large" style="margin-top:0.75rem" onclick="multiConfirmCycleStart()">Démarrer →</button>
+      </div>
+    </div>
+
     <!-- Overlay round break -->
     <div id="multi-overlay-round-break" class="run-overlay hidden">
-      <div class="run-overlay-card">
+      <div class="run-overlay-card" style="padding:1rem 1.1rem">
         <p class="overlay-meta" id="multi-rb-meta">Round 1 terminé</p>
-        <h2 class="overlay-exercise" style="font-size:1rem;color:#94a3b8;margin-bottom:1.25rem">Prêts pour la suite ?</h2>
-        <button class="btn-primary btn-full btn-large" id="multi-rb-btn" onclick="multiAdvancePhase()">Round 2 →</button>
+        <div class="multi-rb-player">
+          <div class="multi-player-bar">
+            <span class="multi-dot" id="multi-rb-dot-0"></span>
+            <span id="multi-rb-name-0" class="multi-name-tag"></span>
+          </div>
+          <div class="rep-stepper" style="margin:0.35rem 0">
+            <button class="rep-btn" onclick="multiRbChangeRep(0,-1)">−</button>
+            <span id="multi-rb-rep-0" class="rep-val">0</span>
+            <button class="rep-btn" onclick="multiRbChangeRep(0,1)">+</button>
+          </div>
+          <div class="rp-row rp-weight-row" style="margin-bottom:0.25rem">
+            <span class="rp-label">Poids (kg)</span>
+            <input type="number" id="multi-rb-weight-0" class="run-weight-input" inputmode="decimal" min="0" step="0.5" placeholder="—" oninput="multiRbSetWeight(0,this)" />
+          </div>
+          <div id="multi-rb-progress-0" class="multi-rb-progress"></div>
+        </div>
+        <div class="multi-rb-divider"></div>
+        <div class="multi-rb-player">
+          <div class="multi-player-bar">
+            <span class="multi-dot" id="multi-rb-dot-1"></span>
+            <span id="multi-rb-name-1" class="multi-name-tag"></span>
+          </div>
+          <div class="rep-stepper" style="margin:0.35rem 0">
+            <button class="rep-btn" onclick="multiRbChangeRep(1,-1)">−</button>
+            <span id="multi-rb-rep-1" class="rep-val">0</span>
+            <button class="rep-btn" onclick="multiRbChangeRep(1,1)">+</button>
+          </div>
+          <div class="rp-row rp-weight-row" style="margin-bottom:0.25rem">
+            <span class="rp-label">Poids (kg)</span>
+            <input type="number" id="multi-rb-weight-1" class="run-weight-input" inputmode="decimal" min="0" step="0.5" placeholder="—" oninput="multiRbSetWeight(1,this)" />
+          </div>
+          <div id="multi-rb-progress-1" class="multi-rb-progress"></div>
+        </div>
+        <button class="btn-primary btn-full btn-large" style="margin-top:0.6rem" id="multi-rb-btn" onclick="multiAdvancePhase()">Round 2 →</button>
       </div>
     </div>
 
@@ -610,7 +672,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=27"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

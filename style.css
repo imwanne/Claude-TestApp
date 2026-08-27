@@ -395,6 +395,14 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .multi-done-stat { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.75rem; color: #64748b; margin-bottom: 0.3rem; }
 .multi-done-val { color: #f1f5f9; font-weight: 600; font-variant-numeric: tabular-nums; }
 
+.multi-rb-player { padding: 0.4rem 0; }
+.multi-rb-divider { height: 1px; background: #1e293b; margin: 0.3rem 0; }
+.multi-rb-progress { font-size: 0.72rem; font-weight: 600; margin-top: 0.15rem; color: #94a3b8; }
+.multi-cs-player-row { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 0.6rem 0.75rem; margin-bottom: 0.5rem; }
+.multi-cs-field { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.3rem; }
+.multi-cs-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+.multi-cs-input { width: 80px; padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #f1f5f9; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; }
+.multi-cs-input:focus { border-color: #6366f1; }
 .multi-starter-row { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
 .multi-starter-label { font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 0.06em; text-transform: uppercase; }
 .mode-selector { display: flex; gap: 0.4rem; }
