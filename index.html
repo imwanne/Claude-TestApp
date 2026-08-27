@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=24" />
+  <link rel="stylesheet" href="style.css?v=25" />
 </head>
 <body>
 
@@ -109,7 +109,7 @@
       <div id="preview-header" class="preview-header"></div>
       <div id="preview-cycles" class="param-list" style="margin-top:1rem"></div>
       <button class="btn-primary btn-full btn-large" style="margin-top:1rem" onclick="startPreviewWorkout()">Start Workout</button>
-      <button class="btn-secondary btn-full" style="margin-top:0.5rem" onclick="openMultiSetup()">Mode Multi (2 joueurs)</button>
+      <button id="btn-multi-mode" class="btn-secondary btn-full hidden" style="margin-top:0.5rem" onclick="openMultiSetup()">Mode Multi (2 joueurs)</button>
     </div>
   </div>
 
@@ -257,6 +257,13 @@
             <button type="button" class="diff-dot diff-3" onclick="setDifficulty(3)">3</button>
             <button type="button" class="diff-dot diff-4" onclick="setDifficulty(4)">4</button>
             <button type="button" class="diff-dot diff-5" onclick="setDifficulty(5)">5</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mode</label>
+          <div class="mode-selector">
+            <button type="button" class="mode-btn active" data-mode="solo" onclick="setWorkoutMode('solo')">Solo</button>
+            <button type="button" class="mode-btn" data-mode="duo" onclick="setWorkoutMode('duo')">Duo</button>
           </div>
         </div>
       </div>
@@ -587,7 +594,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

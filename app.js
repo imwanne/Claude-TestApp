@@ -780,6 +780,12 @@ function setDifficulty(level) {
     btn.classList.toggle('active', i + 1 === level);
   });
 }
+function setWorkoutMode(m) {
+  editMode = m;
+  document.querySelectorAll('.mode-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.mode === m);
+  });
+}
 function setRoundDiff(level) {
   currentRoundDiff = level;
   document.querySelectorAll('#run-round-diff .run-diff-btn').forEach(function(btn, i) {
@@ -813,11 +819,12 @@ function renderWorkouts() {
     var meta = roundsSummary(w)+' × '+w.cycles+'c';
     var desc = w.description ? '<span class="workout-item-desc">'+escHtml(w.description)+'</span>' : '';
     var diffBadge = w.difficulty ? '<span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span>' : '';
+    var modeBadge = (w.mode === 'duo') ? '<span class="mode-badge mode-badge-duo">Duo</span>' : '';
     var li = document.createElement('li'); li.className='workout-item';
     li.innerHTML =
       '<div class="workout-item-main" onclick="openWorkoutPreview(\''+w.id+'\')">' +
         '<span class="workout-item-name">'+escHtml(w.name)+'</span>'+desc+
-        '<div class="workout-item-meta"><span>'+meta+'</span>'+(diffBadge||'')+'<span class="meta-duration">'+dur+'</span></div>'+
+        '<div class="workout-item-meta"><span>'+meta+'</span>'+(diffBadge||'')+modeBadge+'<span class="meta-duration">'+dur+'</span></div>'+
       '</div>'+
       '<div class="workout-item-actions">'+
         '<button class="icon-btn" onclick="event.stopPropagation();openWorkoutEdit(getWorkout(\''+w.id+'\'),\'screen-workouts\')" aria-label="Edit">'+
@@ -845,11 +852,14 @@ function openWorkoutPreview(idOrObj) {
   document.getElementById('preview-title').textContent = w.name;
   var dur = formatTotalDuration(calcTotalDuration(w));
   var headerHtml = '<p class="preview-workout-name">'+escHtml(w.name)+'</p>';
-  if (w.difficulty) headerHtml += '<div style="margin-bottom:0.5rem"><span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span></div>';
+  if (w.difficulty) headerHtml += '<div style="margin-bottom:0.5rem"><span class="diff-badge diff-badge-'+w.difficulty+'">'+DIFF_LABELS[w.difficulty]+'</span>'+(w.mode==='duo'?'<span class="mode-badge mode-badge-duo" style="margin-left:0.4rem">Duo</span>':'')+'</div>';
+  else if (w.mode==='duo') headerHtml += '<div style="margin-bottom:0.5rem"><span class="mode-badge mode-badge-duo">Duo</span></div>';
   if (w.description) headerHtml += '<p class="preview-desc">'+escHtml(w.description)+'</p>';
   if (w.objective) headerHtml += '<div class="preview-objective"><span class="preview-obj-label">Objective</span><span class="preview-obj-text">'+escHtml(w.objective)+'</span></div>';
   headerHtml += '<div class="preview-meta"><span>'+w.cycles+' cycle'+(w.cycles>1?'s':'')+' · '+roundsSummary(w)+' rounds · Work '+formatDuration(w.work)+'</span><span>'+dur+'</span></div>';
   document.getElementById('preview-header').innerHTML = headerHtml;
+  var multiBtn = document.getElementById('btn-multi-mode');
+  if (multiBtn) multiBtn.classList.toggle('hidden', w.mode !== 'duo');
   var cyclesHtml = '<div class="param-section-title">CYCLES</div>';
   for (var i=0; i<w.cycles; i++) {
     var cname = (w.cycleNames && w.cycleNames[i]) || '—';
@@ -869,6 +879,7 @@ var editCycleNames = [];
 var editCycleTargetReps = [];
 var editCycleRounds = [];
 var editDifficulty = 1;
+var editMode = 'solo';
 var editingWorkoutId = null;
 var workoutEditOrigin = 'screen-workouts';
 
@@ -953,6 +964,7 @@ function openWorkoutEdit(workout, origin) {
   editCycleTargetReps = workout && workout.cycleTargetReps ? workout.cycleTargetReps.slice() : [];
   editCycleRounds = workout && workout.cycleRounds ? workout.cycleRounds.slice() : [];
   setDifficulty(workout ? (workout.difficulty || 1) : 1);
+  setWorkoutMode(workout ? (workout.mode || 'solo') : 'solo');
   regenerateCycleDetails();
   show('screen-workout-edit');
 }
@@ -971,7 +983,7 @@ function saveWorkout() {
   var crounds = editCycleRounds.slice(0, n);
   var list = loadWorkouts();
   var newId = editingWorkoutId || genId();
-  var entry = Object.assign({id:newId, name:name, description:desc, objective:obj, difficulty:editDifficulty, cycleNames:cnames, cycleTargetReps:creps, cycleRounds:crounds}, editConfig);
+  var entry = Object.assign({id:newId, name:name, description:desc, objective:obj, difficulty:editDifficulty, mode:editMode, cycleNames:cnames, cycleTargetReps:creps, cycleRounds:crounds}, editConfig);
   if (editingWorkoutId) {
     list = list.map(function(w){ return w.id===editingWorkoutId ? entry : w; });
   } else {

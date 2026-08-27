@@ -395,4 +395,10 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .multi-done-stat { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.75rem; color: #64748b; margin-bottom: 0.3rem; }
 .multi-done-val { color: #f1f5f9; font-weight: 600; font-variant-numeric: tabular-nums; }
 
+.mode-selector { display: flex; gap: 0.4rem; }
+.mode-btn { flex: 1; height: 38px; border-radius: 8px; border: 1.5px solid #334155; background: transparent; color: #475569; font-size: 0.88rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.mode-btn.active { background: #6366f120; border-color: #6366f1; color: #6366f1; }
+.mode-badge { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 10px; letter-spacing: 0.04em; }
+.mode-badge-duo { background: #6366f118; color: #6366f1; border: 1px solid #6366f133; }
+
 .hidden { display: none !important; }
