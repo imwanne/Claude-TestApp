@@ -1686,12 +1686,9 @@ var multiIsPaused = false;
 var multiPauseStart = 0;
 var multiActiveWeightVal = 0;
 var multiLastWeight = [0, 0];
-var multiInactiveRepsVal = 0;
-var multiInactiveWeightVal = 0;
-var multiInactiveDiffVal = 3;
 var multiSessionData = [
-  {roundReps:[],roundWeights:[],roundDiffs:[]},
-  {roundReps:[],roundWeights:[],roundDiffs:[]}
+  {roundReps:[],roundWeights:[]},
+  {roundReps:[],roundWeights:[]}
 ];
 
 function openMultiSetup() {
@@ -1836,7 +1833,7 @@ function multiProcessPhase() {
     multiSetBothBars();
     multiSetCycleName(1);
     document.getElementById('multi-work-panel').classList.add('hidden');
-    document.getElementById('multi-inactive-entry').classList.add('hidden');
+
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Prêts !';
     var w0 = multiCurrentWorkout;
@@ -1892,7 +1889,7 @@ function multiProcessPhase() {
     wInput.value = multiLastWeight[ap] > 0 ? multiLastWeight[ap] : '';
     multiActiveWeightVal = multiLastWeight[ap];
 
-    document.getElementById('multi-inactive-entry').classList.add('hidden');
+
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = q.name + ' en repos...';
 
@@ -1901,7 +1898,7 @@ function multiProcessPhase() {
     badge.style.cssText = 'background:' + ph.color + '18;color:' + ph.color + ';border:1px solid ' + ph.color + '55';
     progress.textContent = 'Cycle ' + ph.cycle + ' terminé';
     document.getElementById('multi-work-panel').classList.add('hidden');
-    document.getElementById('multi-inactive-entry').classList.add('hidden');
+
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Repos entre cycles';
     document.getElementById('multi-cycle-name').classList.add('hidden');
@@ -1912,7 +1909,7 @@ function multiProcessPhase() {
     badge.style.cssText = 'background:#3b82f618;color:#3b82f6;border:1px solid #3b82f655';
     progress.textContent = '';
     document.getElementById('multi-work-panel').classList.add('hidden');
-    document.getElementById('multi-inactive-entry').classList.add('hidden');
+
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Récupération 💪';
     document.getElementById('multi-cycle-name').classList.add('hidden');
@@ -1934,7 +1931,7 @@ function multiProcessPhase() {
     }
     document.getElementById('multi-overlay-round-break').classList.remove('hidden');
     document.getElementById('multi-work-panel').classList.add('hidden');
-    document.getElementById('multi-inactive-entry').classList.add('hidden');
+
     multiSetCycleName(ph.cycle);
     multiSetBothBars();
     return;
@@ -2003,28 +2000,8 @@ function multiAdvancePhase() {
   multiProcessPhase();
 }
 
-function multiUpdateInactiveDiff() {
-  document.querySelectorAll('#multi-diff-btns .run-diff-btn').forEach(function(b, i) {
-    b.classList.toggle('active', i + 1 === multiInactiveDiffVal);
-  });
-}
-
 function multiOnActiveWeight(el) {
   multiActiveWeightVal = parseFloat(el.value) || 0;
-}
-
-function multiOnInactiveWeight(el) {
-  multiInactiveWeightVal = parseFloat(el.value) || 0;
-}
-
-function multiChangeInactiveRep(delta) {
-  multiInactiveRepsVal = Math.max(0, multiInactiveRepsVal + delta);
-  document.getElementById('multi-inactive-rep-val').textContent = multiInactiveRepsVal;
-}
-
-function multiSetInactiveDiff(level) {
-  multiInactiveDiffVal = level;
-  multiUpdateInactiveDiff();
 }
 
 function multiTogglePause() {

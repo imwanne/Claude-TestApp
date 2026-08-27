@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=28" />
+  <link rel="stylesheet" href="style.css?v=29" />
 </head>
 <body>
 
@@ -193,27 +193,6 @@
           <span class="multi-dot" id="multi-inactive-dot"></span>
           <span class="multi-name-tag" id="multi-inactive-name-tag">Joueur 2</span>
           <span class="multi-status-tag" id="multi-inactive-status">REPOS</span>
-        </div>
-        <div id="multi-inactive-entry" class="hidden" style="width:100%">
-          <div class="rep-stepper" style="margin-top:0.25rem">
-            <button class="rep-btn" onclick="multiChangeInactiveRep(-1)">−</button>
-            <span id="multi-inactive-rep-val" class="rep-val">0</span>
-            <button class="rep-btn" onclick="multiChangeInactiveRep(1)">+</button>
-          </div>
-          <div class="rp-row rp-weight-row" style="margin-top:0.4rem">
-            <span class="rp-label">Poids (kg)</span>
-            <input type="number" id="multi-inactive-weight" class="run-weight-input" inputmode="decimal" min="0" step="0.5" placeholder="—" oninput="multiOnInactiveWeight(this)" />
-          </div>
-          <div class="rp-diff-row" style="margin-top:0.5rem">
-            <span class="rp-label">Difficulté</span>
-            <div class="run-diff-selector" id="multi-diff-btns">
-              <button class="run-diff-btn diff-1" onclick="multiSetInactiveDiff(1)">1</button>
-              <button class="run-diff-btn diff-2" onclick="multiSetInactiveDiff(2)">2</button>
-              <button class="run-diff-btn diff-3" onclick="multiSetInactiveDiff(3)">3</button>
-              <button class="run-diff-btn diff-4" onclick="multiSetInactiveDiff(4)">4</button>
-              <button class="run-diff-btn diff-5" onclick="multiSetInactiveDiff(5)">5</button>
-            </div>
-          </div>
         </div>
         <div id="multi-inactive-waiting" class="multi-waiting-msg">Se prépare...</div>
       </div>
@@ -673,7 +652,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=28"></script>
+  <script src="app.js?v=29"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
