@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=25" />
+  <link rel="stylesheet" href="style.css?v=26" />
 </head>
 <body>
 
@@ -124,7 +124,7 @@
       <div class="multi-setup-grid">
         <div class="multi-setup-card" id="multi-setup-card-0">
           <div class="multi-setup-label">Joueur 1</div>
-          <input type="text" id="multi-name-0" class="multi-name-input" placeholder="Nom..." maxlength="20" value="Joueur 1" />
+          <input type="text" id="multi-name-0" class="multi-name-input" placeholder="Nom..." maxlength="20" value="Joueur 1" oninput="updateMultiStarterLabels()" />
           <div class="multi-color-row" id="multi-colors-0">
             <button class="multi-color-dot selected" style="background:#ef4444" onclick="multiSelectColor(0,0)"></button>
             <button class="multi-color-dot" style="background:#3b82f6" onclick="multiSelectColor(0,1)"></button>
@@ -136,7 +136,7 @@
         </div>
         <div class="multi-setup-card" id="multi-setup-card-1">
           <div class="multi-setup-label">Joueur 2</div>
-          <input type="text" id="multi-name-1" class="multi-name-input" placeholder="Nom..." maxlength="20" value="Joueur 2" />
+          <input type="text" id="multi-name-1" class="multi-name-input" placeholder="Nom..." maxlength="20" value="Joueur 2" oninput="updateMultiStarterLabels()" />
           <div class="multi-color-row" id="multi-colors-1">
             <button class="multi-color-dot" style="background:#ef4444" onclick="multiSelectColor(1,0)"></button>
             <button class="multi-color-dot selected" style="background:#3b82f6" onclick="multiSelectColor(1,1)"></button>
@@ -147,7 +147,14 @@
           </div>
         </div>
       </div>
-      <button class="btn-primary btn-full btn-large" style="margin-top:1.5rem" onclick="startMultiWorkoutRun()">Démarrer le workout</button>
+      <div class="multi-starter-row">
+        <span class="multi-starter-label">Qui commence ?</span>
+        <div class="mode-selector">
+          <button type="button" class="mode-btn active" id="multi-starter-0" onclick="setMultiStartingPlayer(0)">Joueur 1</button>
+          <button type="button" class="mode-btn" id="multi-starter-1" onclick="setMultiStartingPlayer(1)">Joueur 2</button>
+        </div>
+      </div>
+      <button class="btn-primary btn-full btn-large" style="margin-top:1rem" onclick="startMultiWorkoutRun()">Démarrer le workout</button>
     </div>
   </div>
 
@@ -225,6 +232,15 @@
         <h2 class="overlay-exercise" style="font-size:1.15rem;margin-bottom:0.25rem">Terminer le workout ?</h2>
         <button class="btn-danger btn-full btn-large" onclick="multiConfirmStop()">Terminer</button>
         <button class="btn-secondary btn-full" onclick="multiCancelStop()">Continuer</button>
+      </div>
+    </div>
+
+    <!-- Overlay round break -->
+    <div id="multi-overlay-round-break" class="run-overlay hidden">
+      <div class="run-overlay-card">
+        <p class="overlay-meta" id="multi-rb-meta">Round 1 terminé</p>
+        <h2 class="overlay-exercise" style="font-size:1rem;color:#94a3b8;margin-bottom:1.25rem">Prêts pour la suite ?</h2>
+        <button class="btn-primary btn-full btn-large" id="multi-rb-btn" onclick="multiAdvancePhase()">Round 2 →</button>
       </div>
     </div>
 
@@ -594,7 +610,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

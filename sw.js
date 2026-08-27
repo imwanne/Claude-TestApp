@@ -1,9 +1,9 @@
-var CACHE = 'sport-timer-v25';
+var CACHE = 'sport-timer-v26';
 var SHELL = [
   '/Claude-TestApp/',
   '/Claude-TestApp/index.html',
-  '/Claude-TestApp/style.css?v=25',
-  '/Claude-TestApp/app.js?v=25',
+  '/Claude-TestApp/style.css?v=26',
+  '/Claude-TestApp/app.js?v=26',
   '/Claude-TestApp/manifest.json',
   '/Claude-TestApp/icons/icon-192.png',
   '/Claude-TestApp/icons/icon-512.png'

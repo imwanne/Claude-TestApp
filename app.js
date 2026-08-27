@@ -1669,6 +1669,7 @@ function fastingStartEating() {
 var MULTI_COLORS = ['#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899'];
 var multiPlayers = [{name:'Joueur 1',color:'#ef4444'},{name:'Joueur 2',color:'#3b82f6'}];
 var multiSelectedColorIdx = [0, 1];
+var multiStartingPlayer = 0;
 var multiCurrentWorkout = null;
 var multiRunSeq = [];
 var multiRunIndex = 0;
@@ -1689,7 +1690,22 @@ var multiSessionData = [
 ];
 
 function openMultiSetup() {
+  setMultiStartingPlayer(0);
+  updateMultiStarterLabels();
   show('screen-workout-multi-setup');
+}
+
+function setMultiStartingPlayer(idx) {
+  multiStartingPlayer = idx;
+  document.getElementById('multi-starter-0').classList.toggle('active', idx === 0);
+  document.getElementById('multi-starter-1').classList.toggle('active', idx === 1);
+}
+
+function updateMultiStarterLabels() {
+  var n0 = document.getElementById('multi-name-0').value.trim() || 'Joueur 1';
+  var n1 = document.getElementById('multi-name-1').value.trim() || 'Joueur 2';
+  document.getElementById('multi-starter-0').textContent = n0;
+  document.getElementById('multi-starter-1').textContent = n1;
 }
 
 function multiSelectColor(playerIdx, colorIdx) {
@@ -1700,14 +1716,23 @@ function multiSelectColor(playerIdx, colorIdx) {
   });
 }
 
-function buildMultiSequence(w) {
+function buildMultiSequence(w, firstPlayer) {
+  var first = (firstPlayer === 1) ? 1 : 0;
+  var second = 1 - first;
   var seq = [];
   seq.push({name:'PREPARE', duration:w.prepare, color:'#eab308', activePlayer:null, round:0, cycle:0, totalRounds:0});
   for (var c = 0; c < w.cycles; c++) {
     var nRounds = (w.cycleRounds && w.cycleRounds[c]) ? w.cycleRounds[c] : w.rounds;
     for (var r = 0; r < nRounds; r++) {
-      seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:0, round:r+1, cycle:c+1, totalRounds:nRounds});
-      seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:1, round:r+1, cycle:c+1, totalRounds:nRounds});
+      seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:first, round:r+1, cycle:c+1, totalRounds:nRounds});
+      seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:second, round:r+1, cycle:c+1, totalRounds:nRounds});
+      var isVeryLastRound = (c === w.cycles - 1) && (r === nRounds - 1);
+      if (!isVeryLastRound) {
+        var isLastInCycle = (r === nRounds - 1);
+        seq.push({name:'ROUND_BREAK', isLastInCycle:isLastInCycle,
+          nextLabel: isLastInCycle ? 'Démarrer la récupération' : 'Round ' + (r + 2),
+          round:r+1, cycle:c+1, totalRounds:nRounds});
+      }
     }
     if (c < w.cycles - 1) {
       seq.push({name:'REST_BETWEEN', duration:w.restBetweenCycles, color:'#eab308', activePlayer:null, round:0, cycle:c+1, totalRounds:0});
@@ -1725,7 +1750,7 @@ function startMultiWorkoutRun() {
     {name: n1, color: MULTI_COLORS[multiSelectedColorIdx[1]]}
   ];
   multiCurrentWorkout = previewWorkout;
-  multiRunSeq = buildMultiSequence(multiCurrentWorkout);
+  multiRunSeq = buildMultiSequence(multiCurrentWorkout, multiStartingPlayer);
   multiRunIndex = 0;
   multiIsPaused = false;
   multiActiveWeightVal = 0;
@@ -1790,7 +1815,7 @@ function multiProcessPhase() {
     multiActiveWeightVal = multiLastWeight[ap];
 
     // Inactive player data entry: show if they've done at least 1 round
-    var inactiveHasRound = (ap === 0 && ph.round > 1) || (ap === 1);
+    var inactiveHasRound = (ap !== multiStartingPlayer) || (ph.round > 1);
     multiInactiveRepsVal = 0;
     multiInactiveWeightVal = multiLastWeight[ip];
     multiInactiveDiffVal = 3;
@@ -1829,6 +1854,15 @@ function multiProcessPhase() {
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Récupération 💪';
     multiSetBothBars();
+
+  } else if (ph.name === 'ROUND_BREAK') {
+    document.getElementById('multi-rb-meta').textContent = 'Round ' + ph.round + ' / ' + ph.totalRounds + ' terminé';
+    document.getElementById('multi-rb-btn').textContent = ph.nextLabel + ' →';
+    document.getElementById('multi-overlay-round-break').classList.remove('hidden');
+    document.getElementById('multi-work-panel').classList.add('hidden');
+    document.getElementById('multi-inactive-entry').classList.add('hidden');
+    multiSetBothBars();
+    return;
   }
 
   timer.textContent = formatMmSs(ph.duration);
@@ -1870,13 +1904,14 @@ function multiTick() {
 function multiAdvancePhase() {
   clearInterval(multiRunInterval);
   multiRunInterval = null;
+  document.getElementById('multi-overlay-round-break').classList.add('hidden');
   var ph = multiRunSeq[multiRunIndex];
 
   if (ph && ph.name === 'MULTI_WORK') {
     var ap = ph.activePlayer;
     var ip = 1 - ap;
     multiLastWeight[ap] = multiActiveWeightVal;
-    var inactiveHasRound = (ap === 0 && ph.round > 1) || (ap === 1);
+    var inactiveHasRound = (ap !== multiStartingPlayer) || (ph.round > 1);
     if (inactiveHasRound) {
       multiSessionData[ip].roundReps.push(multiInactiveRepsVal);
       multiSessionData[ip].roundWeights.push(multiInactiveWeightVal || multiLastWeight[ip]);
@@ -1962,6 +1997,7 @@ function multiConfirmStop() {
 function multiShowDone() {
   clearInterval(multiRunInterval);
   multiRunInterval = null;
+  document.getElementById('multi-overlay-round-break').classList.add('hidden');
 
   // Commit any uncommitted inactive data from the last phase
   var prevPh = multiRunIndex > 0 ? multiRunSeq[multiRunIndex - 1] : null;
@@ -1969,7 +2005,7 @@ function multiShowDone() {
     var ap = prevPh.activePlayer;
     var ip = 1 - ap;
     multiLastWeight[ap] = multiActiveWeightVal;
-    var inactiveHasRound = (ap === 0 && prevPh.round > 1) || (ap === 1);
+    var inactiveHasRound = (ap !== multiStartingPlayer) || (prevPh.round > 1);
     if (inactiveHasRound && multiInactiveRepsVal > 0) {
       multiSessionData[ip].roundReps.push(multiInactiveRepsVal);
       multiSessionData[ip].roundWeights.push(multiInactiveWeightVal || multiLastWeight[ip]);
