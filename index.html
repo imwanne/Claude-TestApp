@@ -11,7 +11,7 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=29" />
+  <link rel="stylesheet" href="style.css?v=30" />
 </head>
 <body>
 
@@ -195,6 +195,20 @@
           <span class="multi-status-tag" id="multi-inactive-status">REPOS</span>
         </div>
         <div id="multi-inactive-waiting" class="multi-waiting-msg">Se prépare...</div>
+        <div id="multi-rest-recap" class="hidden" style="width:100%;margin-top:0.25rem">
+          <div class="multi-rr-row" id="multi-rr-row-0">
+            <span class="multi-dot" id="multi-rr-dot-0"></span>
+            <span class="multi-rr-name" id="multi-rr-name-0"></span>
+            <span class="multi-rr-stat" id="multi-rr-reps-0"></span>
+            <span class="multi-rr-stat secondary" id="multi-rr-weight-0"></span>
+          </div>
+          <div class="multi-rr-row" id="multi-rr-row-1">
+            <span class="multi-dot" id="multi-rr-dot-1"></span>
+            <span class="multi-rr-name" id="multi-rr-name-1"></span>
+            <span class="multi-rr-stat" id="multi-rr-reps-1"></span>
+            <span class="multi-rr-stat secondary" id="multi-rr-weight-1"></span>
+          </div>
+        </div>
       </div>
 
       <div id="multi-pause-info" class="run-pause-info hidden" style="text-align:center;padding:0.25rem 0">En pause</div>
@@ -652,7 +666,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=29"></script>
+  <script src="app.js?v=30"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

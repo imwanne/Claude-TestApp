@@ -1777,7 +1777,7 @@ function buildMultiSequence(w, firstPlayer) {
       seq.push({name:'ROUND_BREAK', nextLabel:nextLabel, round:r+1, cycle:c+1, totalRounds:nRounds});
     }
     if (c < w.cycles - 1) {
-      seq.push({name:'REST_BETWEEN', duration:w.restBetweenCycles, color:'#eab308', activePlayer:null, round:0, cycle:c+1, totalRounds:0});
+      seq.push({name:'REST_BETWEEN', duration:w.restBetweenCycles, color:'#eab308', activePlayer:null, round:0, cycle:c+1, totalRounds:0, nRounds:nRounds});
     }
   }
   seq.push({name:'COOLDOWN', duration:w.cooldown, color:'#3b82f6', activePlayer:null, round:0, cycle:0, totalRounds:0});
@@ -1833,7 +1833,7 @@ function multiProcessPhase() {
     multiSetBothBars();
     multiSetCycleName(1);
     document.getElementById('multi-work-panel').classList.add('hidden');
-
+    document.getElementById('multi-rest-recap').classList.add('hidden');
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Prêts !';
     var w0 = multiCurrentWorkout;
@@ -1890,6 +1890,7 @@ function multiProcessPhase() {
     multiActiveWeightVal = multiLastWeight[ap];
 
 
+    document.getElementById('multi-rest-recap').classList.add('hidden');
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = q.name + ' en repos...';
 
@@ -1898,10 +1899,9 @@ function multiProcessPhase() {
     badge.style.cssText = 'background:' + ph.color + '18;color:' + ph.color + ';border:1px solid ' + ph.color + '55';
     progress.textContent = 'Cycle ' + ph.cycle + ' terminé';
     document.getElementById('multi-work-panel').classList.add('hidden');
-
-    document.getElementById('multi-inactive-waiting').classList.remove('hidden');
-    document.getElementById('multi-inactive-waiting').textContent = 'Repos entre cycles';
+    document.getElementById('multi-inactive-waiting').classList.add('hidden');
     document.getElementById('multi-cycle-name').classList.add('hidden');
+    multiShowRestRecap(ph);
     multiSetBothBars();
 
   } else if (ph.name === 'COOLDOWN') {
@@ -1909,7 +1909,7 @@ function multiProcessPhase() {
     badge.style.cssText = 'background:#3b82f618;color:#3b82f6;border:1px solid #3b82f655';
     progress.textContent = '';
     document.getElementById('multi-work-panel').classList.add('hidden');
-
+    document.getElementById('multi-rest-recap').classList.add('hidden');
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Récupération 💪';
     document.getElementById('multi-cycle-name').classList.add('hidden');
@@ -1963,6 +1963,26 @@ function multiSetCycleName(cycle) {
   var label = (w && w.cycles > 1) ? 'Cycle ' + cycle + (cname ? ' — ' + cname : '') : cname;
   el.textContent = label;
   el.classList.toggle('hidden', !label);
+}
+
+function multiShowRestRecap(ph) {
+  var nRounds = ph.nRounds || 0;
+  for (var pi = 0; pi < 2; pi++) {
+    var sd = multiSessionData[pi];
+    var repsArr = nRounds > 0 ? sd.roundReps.slice(-nRounds) : sd.roundReps.slice();
+    var weightsArr = nRounds > 0 ? sd.roundWeights.slice(-nRounds) : sd.roundWeights.slice();
+    var totalReps = repsArr.reduce(function(a, b) { return a + b; }, 0);
+    var totalWeight = 0;
+    for (var ri = 0; ri < repsArr.length; ri++) {
+      totalWeight += repsArr[ri] * (weightsArr[ri] || 0);
+    }
+    var p = multiPlayers[pi];
+    document.getElementById('multi-rr-dot-' + pi).style.background = p.color;
+    document.getElementById('multi-rr-name-' + pi).textContent = p.name;
+    document.getElementById('multi-rr-reps-' + pi).textContent = totalReps + ' reps';
+    document.getElementById('multi-rr-weight-' + pi).textContent = totalWeight > 0 ? totalWeight + ' kg déplacés' : '';
+  }
+  document.getElementById('multi-rest-recap').classList.remove('hidden');
 }
 
 function multiTick() {
