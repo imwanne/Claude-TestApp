@@ -1670,6 +1670,7 @@ var MULTI_COLORS = ['#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899']
 var multiPlayers = [{name:'Joueur 1',color:'#ef4444'},{name:'Joueur 2',color:'#3b82f6'}];
 var multiSelectedColorIdx = [0, 1];
 var multiStartingPlayer = 0;
+var multiPreparingCycle = false;
 var multiTargetReps = [0, 0];
 var multiTotalTargetReps = [0, 0];
 var multiRbReps = [0, 0];
@@ -1718,6 +1719,9 @@ function multiConfirmCycleStart() {
   multiTotalTargetReps[0] += multiTargetReps[0];
   multiTotalTargetReps[1] += multiTargetReps[1];
   document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
+  clearInterval(multiRunInterval);
+  multiRunInterval = null;
+  if (multiPreparingCycle) { multiPreparingCycle = false; }
   multiRunIndex++;
   multiProcessPhase();
 }
@@ -1764,7 +1768,9 @@ function buildMultiSequence(w, firstPlayer) {
     var nRounds = (w.cycleRounds && w.cycleRounds[c]) ? w.cycleRounds[c] : w.rounds;
     var cname = (w.cycleNames && w.cycleNames[c]) || '';
     var defReps = (w.cycleTargetReps && w.cycleTargetReps[c]) || 0;
-    seq.push({name:'MULTI_CYCLE_START', cycle:c+1, totalCycles:w.cycles, cycleName:cname, defaultTargetReps:defReps});
+    if (c > 0) {
+      seq.push({name:'MULTI_CYCLE_START', cycle:c+1, totalCycles:w.cycles, cycleName:cname, defaultTargetReps:defReps});
+    }
     for (var r = 0; r < nRounds; r++) {
       seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:first, round:r+1, cycle:c+1, totalRounds:nRounds});
       seq.push({name:'MULTI_WORK', duration:w.work, color:'#22c55e', activePlayer:second, round:r+1, cycle:c+1, totalRounds:nRounds});
@@ -1794,6 +1800,7 @@ function startMultiWorkoutRun() {
   multiIsPaused = false;
   multiActiveWeightVal = 0;
   multiLastWeight = [0, 0];
+  multiPreparingCycle = false;
   multiTargetReps = [0, 0];
   multiTotalTargetReps = [0, 0];
   multiRbReps = [0, 0];
@@ -1827,10 +1834,24 @@ function multiProcessPhase() {
     badge.style.cssText = 'background:' + ph.color + '18;color:' + ph.color + ';border:1px solid ' + ph.color + '55';
     progress.textContent = '';
     multiSetBothBars();
+    multiSetCycleName(1);
     document.getElementById('multi-work-panel').classList.add('hidden');
     document.getElementById('multi-inactive-entry').classList.add('hidden');
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Prêts !';
+    var w0 = multiCurrentWorkout;
+    var c1name = (w0.cycleNames && w0.cycleNames[0]) || '';
+    var c1reps = (w0.cycleTargetReps && w0.cycleTargetReps[0]) || 0;
+    document.getElementById('multi-cs-meta').textContent = 'Cycle 1 / ' + w0.cycles;
+    var csN = document.getElementById('multi-cs-name');
+    csN.textContent = c1name; csN.classList.toggle('hidden', !c1name);
+    for (var cpi = 0; cpi < 2; cpi++) {
+      document.getElementById('multi-cs-dot-' + cpi).style.background = multiPlayers[cpi].color;
+      document.getElementById('multi-cs-pname-' + cpi).textContent = multiPlayers[cpi].name;
+      document.getElementById('multi-cs-reps-' + cpi).value = c1reps > 0 ? c1reps : '';
+    }
+    document.getElementById('multi-overlay-cycle-start').classList.remove('hidden');
+    multiPreparingCycle = true;
 
   } else if (ph.name === 'MULTI_CYCLE_START') {
     document.getElementById('multi-cs-meta').textContent = 'Cycle ' + ph.cycle + ' / ' + ph.totalCycles;
@@ -1844,6 +1865,7 @@ function multiProcessPhase() {
       document.getElementById('multi-cs-reps-' + pi).value = ph.defaultTargetReps > 0 ? ph.defaultTargetReps : '';
     }
     document.getElementById('multi-overlay-cycle-start').classList.remove('hidden');
+    multiSetCycleName(ph.cycle);
     multiSetBothBars();
     return;
 
@@ -1856,6 +1878,7 @@ function multiProcessPhase() {
     badge.textContent = 'WORK';
     badge.style.cssText = 'background:' + p.color + '18;color:' + p.color + ';border:1px solid ' + p.color + '55';
     progress.textContent = 'Round ' + ph.round + ' / ' + ph.totalRounds + '  ·  Cycle ' + ph.cycle + ' / ' + multiCurrentWorkout.cycles;
+    multiSetCycleName(ph.cycle);
 
     multiSetZone('active', p, 'TRAVAILLE');
     multiSetZone('inactive', q, 'REPOS');
@@ -1881,6 +1904,7 @@ function multiProcessPhase() {
     document.getElementById('multi-inactive-entry').classList.add('hidden');
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Repos entre cycles';
+    document.getElementById('multi-cycle-name').classList.add('hidden');
     multiSetBothBars();
 
   } else if (ph.name === 'COOLDOWN') {
@@ -1891,6 +1915,7 @@ function multiProcessPhase() {
     document.getElementById('multi-inactive-entry').classList.add('hidden');
     document.getElementById('multi-inactive-waiting').classList.remove('hidden');
     document.getElementById('multi-inactive-waiting').textContent = 'Récupération 💪';
+    document.getElementById('multi-cycle-name').classList.add('hidden');
     multiSetBothBars();
 
   } else if (ph.name === 'ROUND_BREAK') {
@@ -1910,6 +1935,7 @@ function multiProcessPhase() {
     document.getElementById('multi-overlay-round-break').classList.remove('hidden');
     document.getElementById('multi-work-panel').classList.add('hidden');
     document.getElementById('multi-inactive-entry').classList.add('hidden');
+    multiSetCycleName(ph.cycle);
     multiSetBothBars();
     return;
   }
@@ -1933,10 +1959,13 @@ function multiSetBothBars() {
   document.getElementById('multi-inactive-zone').style.borderColor = multiPlayers[1].color + '33';
 }
 
-function multiSetSuggest(ap) {
-  var sd = multiSessionData[ap];
-  var doneReps = sd.roundReps.reduce(function(a,b){return a+b;}, 0);
-  document.getElementById('multi-suggest').textContent = doneReps > 0 ? '+ ' + doneReps + ' reps' : '—';
+function multiSetCycleName(cycle) {
+  var el = document.getElementById('multi-cycle-name');
+  var w = multiCurrentWorkout;
+  var cname = (w && w.cycleNames && w.cycleNames[cycle - 1]) || '';
+  var label = (w && w.cycles > 1) ? 'Cycle ' + cycle + (cname ? ' — ' + cname : '') : cname;
+  el.textContent = label;
+  el.classList.toggle('hidden', !label);
 }
 
 function multiTick() {
@@ -1955,6 +1984,7 @@ function multiAdvancePhase() {
   multiRunInterval = null;
   document.getElementById('multi-overlay-round-break').classList.add('hidden');
   document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
+  multiPreparingCycle = false;
   var ph = multiRunSeq[multiRunIndex];
 
   if (ph && ph.name === 'MULTI_WORK') {
@@ -2025,6 +2055,14 @@ function multiSkipPhase() {
   multiRunInterval = null;
   var ph = multiRunSeq[multiRunIndex];
   if (ph && ph.name === 'MULTI_CYCLE_START') {
+    multiTargetReps = [0, 0];
+    document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
+    multiRunIndex++;
+    multiProcessPhase();
+    return;
+  }
+  if (ph && ph.name === 'PREPARE' && multiPreparingCycle) {
+    multiPreparingCycle = false;
     multiTargetReps = [0, 0];
     document.getElementById('multi-overlay-cycle-start').classList.add('hidden');
     multiRunIndex++;
