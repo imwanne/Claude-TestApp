@@ -418,3 +418,40 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .mode-badge-duo { background: #6366f118; color: #6366f1; border: 1px solid #6366f133; }
 
 .hidden { display: none !important; }
+
+/* HISTORIQUE D'ENTRAÎNEMENT */
+.hist-range-tabs { display: flex; gap: 0.4rem; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 0.25rem; }
+.hist-range-tab { flex: 1; padding: 0.5rem 0; border: none; background: none; border-radius: 8px; color: #64748b; font-size: 0.82rem; font-weight: 600; cursor: pointer; min-height: 40px; }
+.hist-range-tab.active { background: #334155; color: #f1f5f9; }
+.hist-range-tab:active { color: #e2e8f0; }
+.hist-stats-card { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 0.9rem 0.5rem; }
+.hist-stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 0; }
+.hist-stat-val { font-size: clamp(0.85rem, 3.6vw, 1.05rem); font-weight: 700; color: #f8fafc; letter-spacing: -0.3px; white-space: nowrap; }
+.hist-stat-label { font-size: 0.68rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.hist-select-bar { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.hist-select-bar .btn-tertiary, .hist-select-bar .btn-danger { flex: 1; padding: 0.55rem 0.75rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; min-height: 44px; cursor: pointer; }
+.hist-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.85rem; }
+.hist-entry { display: flex; align-items: stretch; gap: 0.5rem; background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+.hist-entry.selected { border-color: #6366f1; background: #222b45; }
+.hist-check { width: 24px; height: 24px; flex-shrink: 0; align-self: center; margin-left: 0.85rem; border: 1.5px solid #475569; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: #fff; }
+.hist-check.checked { background: #6366f1; border-color: #6366f1; }
+.hist-entry-main { flex: 1; min-width: 0; padding: 0.8rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.hist-entry-top { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.hist-entry-name { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; }
+.hist-entry-when { font-size: 0.78rem; color: #64748b; }
+.hist-entry-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.hist-pill { font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.5rem; border-radius: 20px; background: #0f172a; color: #94a3b8; border: 1px solid #334155; }
+.hist-pill.warn { background: #3a1d1d; color: #fca5a5; border-color: #7f1d1d; }
+.hist-entry-detail { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.74rem; }
+.hist-entry-player { font-weight: 600; }
+.hist-entry-cycles { color: #64748b; }
+.nav-icon-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; background: #1e293b; border-radius: 8px; color: #94a3b8; cursor: pointer; flex-shrink: 0; }
+.nav-icon-btn svg { width: 18px; height: 18px; }
+.nav-icon-btn:active { background: #334155; }
+.hist-banner { display: flex; align-items: center; gap: 0.75rem; width: 100%; margin-bottom: 0.9rem; padding: 0.75rem 0.9rem; background: #1e293b; border: 1px solid #334155; border-radius: 12px; text-align: left; cursor: pointer; }
+.hist-banner:active { background: #273449; }
+.hist-banner-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.hist-banner-title { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; }
+.hist-banner-sub { font-size: 0.76rem; color: #64748b; }
+.hist-banner-arrow { width: 18px; height: 18px; color: #475569; flex-shrink: 0; }
+.app-version { display: inline-block; margin-top: 0.6rem; padding: 0.15rem 0.55rem; border: 1px solid #334155; border-radius: 20px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; color: #64748b; }

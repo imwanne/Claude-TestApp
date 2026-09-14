@@ -11,13 +11,13 @@
   <title>Sport Timer</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=30" />
+  <link rel="stylesheet" href="style.css?v=3.1" />
 </head>
 <body>
 
   <!-- HOME -->
   <div id="screen-home" class="screen active">
-    <div class="home-hero"><h1>Sport Timer</h1><p class="home-sub">Choisissez un mode</p></div>
+    <div class="home-hero"><h1>Sport Timer</h1><p class="home-sub">Choisissez un mode</p><span class="app-version" id="app-version">—</span></div>
     <div class="home-grid">
       <button class="home-card" onclick="show('screen-countdown')">
         <svg class="home-icon" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="26" r="16" stroke="currentColor" stroke-width="3"/><path d="M24 16v10l6 4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M19 8h10M24 8v4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
@@ -81,6 +81,10 @@
           <div class="sport-card-icon" style="background:#6366f118;color:#6366f1"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="16" cy="18" r="11"/><path d="M16 10V7M13 5h6"/><path d="M16 18l5-5"/></svg></div>
           <div class="sport-card-text"><span class="sport-card-label">Chrono</span><span class="sport-card-sub">Stopwatch &amp; laps</span></div>
         </button>
+        <button class="sport-card" onclick="showWorkoutHistory()">
+          <div class="sport-card-icon" style="background:#f59e0b18;color:#f59e0b"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 26V14M13 26V8M20 26V17M27 26V11"/><path d="M4 28h24"/></svg></div>
+          <div class="sport-card-text"><span class="sport-card-label">Historique</span><span class="sport-card-sub">Activité totale &amp; séances</span></div>
+        </button>
       </div>
     </div>
   </div>
@@ -90,11 +94,47 @@
     <div class="nav-bar">
       <button class="back-btn" onclick="show('screen-sport-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <span class="nav-title">My Workouts</span>
+      <button class="nav-icon-btn" onclick="showWorkoutHistory('screen-workouts')" aria-label="Historique"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M9.5 20V5M15 20V14M20.5 20V8"/></svg></button>
       <button class="nav-text-btn accent" onclick="openWorkoutEdit(null,'screen-workouts')">+ New</button>
     </div>
     <div class="screen-body">
+      <button id="workouts-hist-banner" class="hist-banner hidden" onclick="showWorkoutHistory('screen-workouts')">
+        <div class="hist-banner-info">
+          <span class="hist-banner-title">Historique</span>
+          <span class="hist-banner-sub" id="workouts-hist-sub">—</span>
+        </div>
+        <svg class="hist-banner-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
       <div id="workouts-empty" class="empty-state hidden"><p>No workouts yet.</p><button class="btn-primary" style="margin-top:1rem" onclick="openWorkoutEdit(null,'screen-workouts')">Create your first workout</button></div>
       <ul id="workouts-list" class="workouts-list"></ul>
+    </div>
+  </div>
+
+  <!-- HISTORIQUE D'ENTRAÎNEMENT -->
+  <div id="screen-workout-history" class="screen">
+    <div class="nav-bar">
+      <button class="back-btn" onclick="histGoBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="nav-title">Historique</span>
+      <button id="hist-select-btn" class="nav-text-btn" onclick="toggleHistSelectMode()">Gérer</button>
+    </div>
+    <div class="screen-body">
+      <div class="hist-range-tabs">
+        <button id="hist-range-7" class="hist-range-tab" onclick="setHistRange('7')">7 jours</button>
+        <button id="hist-range-30" class="hist-range-tab" onclick="setHistRange('30')">30 jours</button>
+        <button id="hist-range-all" class="hist-range-tab active" onclick="setHistRange('all')">Tout</button>
+      </div>
+      <div class="hist-stats-card">
+        <div class="hist-stat"><span class="hist-stat-val" id="hist-stat-count">0</span><span class="hist-stat-label">séances</span></div>
+        <div class="hist-stat"><span class="hist-stat-val" id="hist-stat-time">—</span><span class="hist-stat-label">durée</span></div>
+        <div class="hist-stat"><span class="hist-stat-val" id="hist-stat-reps">0</span><span class="hist-stat-label">reps</span></div>
+        <div class="hist-stat"><span class="hist-stat-val" id="hist-stat-kg">—</span><span class="hist-stat-label">déplacé</span></div>
+      </div>
+      <div id="hist-select-bar" class="hist-select-bar hidden">
+        <button id="hist-selectall-btn" class="btn-tertiary" onclick="histSelectAllVisible()">Tout sélectionner</button>
+        <button id="hist-delete-btn" class="btn-danger" onclick="deleteSelectedHistory()" disabled>Supprimer</button>
+      </div>
+      <div id="hist-empty" class="empty-state hidden"><p>Aucun entraînement enregistré pour le moment.</p></div>
+      <div id="hist-list" class="hist-list"></div>
     </div>
   </div>
 
@@ -666,7 +706,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=3.1"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {

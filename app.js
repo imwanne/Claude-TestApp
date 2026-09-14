@@ -1,6 +1,9 @@
 'use strict';
 
 // ROUTER
+// Version affichée sur l'écran d'accueil : à monter à chaque déploiement.
+var APP_VERSION = 'V3.1';
+
 function show(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
@@ -323,6 +326,8 @@ function onWeightChange(el) {
 
 function startWorkoutRun(workout) {
   currentWorkout = workout;
+  sessionStartedAt = Date.now();
+  sessionRecorded = false;
   sessionCycleData = [];
   for (var i = 0; i < workout.cycles; i++) {
     sessionCycleData.push({
@@ -646,6 +651,7 @@ function confirmCycleStart() {
 }
 
 function showWorkoutDone() {
+  recordSoloSession(true);
   playStartChime('DONE!');
   vib([200, 100, 200, 100, 400]);
   document.getElementById('done-subtitle').textContent = currentWorkout.name;
@@ -723,6 +729,7 @@ function skipRunPhase() {
 }
 
 function stopWorkoutRun() {
+  recordSoloSession(false);
   dismissCelebration();
   releaseWakeLock();
   isPaused = false;
@@ -808,6 +815,7 @@ function getWorkout(id) { return loadWorkouts().find(function(w){ return w.id===
 // WORKOUT LIST
 function showWorkouts() { renderWorkouts(); show('screen-workouts'); }
 function renderWorkouts() {
+  renderWorkoutsHistBanner();
   var list = loadWorkouts();
   var ul = document.getElementById('workouts-list');
   var empty = document.getElementById('workouts-empty');
@@ -1792,6 +1800,8 @@ function startMultiWorkoutRun() {
     {name: n1, color: MULTI_COLORS[multiSelectedColorIdx[1]]}
   ];
   multiCurrentWorkout = previewWorkout;
+  multiSessionStartedAt = Date.now();
+  multiSessionRecorded = false;
   multiRunSeq = buildMultiSequence(multiCurrentWorkout, multiStartingPlayer);
   multiRunIndex = 0;
   multiIsPaused = false;
@@ -2087,10 +2097,11 @@ function multiCancelStop() {
 
 function multiConfirmStop() {
   document.getElementById('multi-overlay-stop').classList.add('hidden');
-  multiShowDone();
+  multiShowDone(false);
 }
 
-function multiShowDone() {
+function multiShowDone(completed) {
+  recordMultiSession(completed !== false);
   clearInterval(multiRunInterval);
   multiRunInterval = null;
   document.getElementById('multi-overlay-round-break').classList.add('hidden');
@@ -2130,3 +2141,362 @@ function multiFinish() {
   document.getElementById('multi-overlay-done').classList.add('hidden');
   show('screen-workouts');
 }
+
+// ============================================================
+// HISTORIQUE D'ENTRAÎNEMENT — base locale (localStorage)
+// ============================================================
+var HISTORY_KEY = 'workout-history';
+var HISTORY_SCHEMA = 1;
+var histRange = 'all';        // '7' | '30' | 'all'
+var histSelectMode = false;
+var histSelected = {};        // id -> true
+var histVisibleIds = [];
+var histOrigin = 'screen-sport-home';
+var sessionStartedAt = 0;
+var sessionRecorded = false;
+var multiSessionStartedAt = 0;
+var multiSessionRecorded = false;
+
+function histLoad() {
+  try {
+    var raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(raw) ? raw : [];
+  } catch (e) { return []; }
+}
+
+function histSave(list) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); return true; }
+  catch (e) { return false; }
+}
+
+function histAdd(entry) {
+  var list = histLoad();
+  list.push(entry);
+  return histSave(list);
+}
+
+function histGet(id) {
+  return histLoad().filter(function(e) { return e.id === id; })[0] || null;
+}
+
+function histRemove(ids) {
+  var kill = {};
+  ids.forEach(function(id) { kill[id] = true; });
+  return histSave(histLoad().filter(function(e) { return !kill[e.id]; }));
+}
+
+// Moyenne des difficultés renseignées d'un cycle (0 = non noté)
+function histCycleDiff(cd) {
+  if (cd.cycleDiff > 0) return cd.cycleDiff;
+  var rated = (cd.roundDiffs || []).filter(function(d) { return d > 0; });
+  if (!rated.length) return 0;
+  return Math.round(rated.reduce(function(a, b) { return a + b; }, 0) / rated.length);
+}
+
+function histRound1(n) { return Math.round(n * 10) / 10; }
+
+// Enregistre la séance solo qui vient de se terminer (ou d'être interrompue).
+function recordSoloSession(completed) {
+  if (sessionRecorded || !currentWorkout) return;
+  var durationSecs = sessionStartedAt > 0 ? Math.round((Date.now() - sessionStartedAt) / 1000) : 0;
+  var cycles = [], totalReps = 0, totalKg = 0, diffSum = 0, diffCount = 0;
+  sessionCycleData.forEach(function(cd) {
+    var reps = (cd.roundReps || []).reduce(function(a, b) { return a + b; }, 0);
+    var kg = 0;
+    (cd.roundWeights || []).forEach(function(w, ri) { if (w > 0) kg += w * (cd.roundReps[ri] || 0); });
+    var diff = histCycleDiff(cd);
+    if (diff > 0) { diffSum += diff; diffCount++; }
+    totalReps += reps;
+    totalKg += kg;
+    cycles.push({
+      name: cd.name || '',
+      targetReps: cd.targetReps || 0,
+      reps: reps,
+      kg: histRound1(kg),
+      rounds: (cd.roundReps || []).length,
+      diff: diff
+    });
+  });
+  // Une séance ouverte puis refermée aussitôt ne mérite pas une entrée.
+  if (!completed && totalReps === 0 && durationSecs < 60) return;
+  sessionRecorded = true;
+  histAdd({
+    id: genId(),
+    v: HISTORY_SCHEMA,
+    mode: 'solo',
+    workoutId: currentWorkout.id || '',
+    workoutName: currentWorkout.name || 'Workout',
+    startedAt: sessionStartedAt || Date.now(),
+    endedAt: Date.now(),
+    durationSecs: durationSecs,
+    completed: !!completed,
+    totalReps: totalReps,
+    totalKg: histRound1(totalKg),
+    difficulty: diffCount > 0 ? Math.round(diffSum / diffCount) : 0,
+    cycles: cycles
+  });
+}
+
+// Enregistre la séance duo : le total cumule les deux joueurs, le détail les sépare.
+function recordMultiSession(completed) {
+  if (multiSessionRecorded || !multiCurrentWorkout) return;
+  var durationSecs = multiSessionStartedAt > 0 ? Math.round((Date.now() - multiSessionStartedAt) / 1000) : 0;
+  var players = [], totalReps = 0, totalKg = 0;
+  for (var p = 0; p < multiSessionData.length; p++) {
+    var sd = multiSessionData[p];
+    var reps = (sd.roundReps || []).reduce(function(a, b) { return a + b; }, 0);
+    var kg = 0;
+    for (var i = 0; i < (sd.roundReps || []).length; i++) {
+      kg += (sd.roundWeights[i] || 0) * (sd.roundReps[i] || 0);
+    }
+    totalReps += reps;
+    totalKg += kg;
+    players.push({
+      name: (multiPlayers[p] && multiPlayers[p].name) || ('Joueur ' + (p + 1)),
+      color: (multiPlayers[p] && multiPlayers[p].color) || '#94a3b8',
+      reps: reps,
+      targetReps: multiTotalTargetReps[p] || 0,
+      kg: histRound1(kg)
+    });
+  }
+  if (!completed && totalReps === 0 && durationSecs < 60) return;
+  multiSessionRecorded = true;
+  histAdd({
+    id: genId(),
+    v: HISTORY_SCHEMA,
+    mode: 'duo',
+    workoutId: multiCurrentWorkout.id || '',
+    workoutName: multiCurrentWorkout.name || 'Workout',
+    startedAt: multiSessionStartedAt || Date.now(),
+    endedAt: Date.now(),
+    durationSecs: durationSecs,
+    completed: !!completed,
+    totalReps: totalReps,
+    totalKg: histRound1(totalKg),
+    difficulty: 0,
+    players: players
+  });
+}
+
+// --- Agrégats ---
+
+function histRangeStart(range) {
+  if (range === 'all') return 0;
+  var days = parseInt(range, 10);
+  var d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime() - (days - 1) * 86400000;
+}
+
+function histFilter(list, range) {
+  var from = histRangeStart(range);
+  return list.filter(function(e) { return (e.startedAt || 0) >= from; });
+}
+
+function histTotals(list) {
+  var t = {count: list.length, secs: 0, reps: 0, kg: 0};
+  list.forEach(function(e) {
+    t.secs += e.durationSecs || 0;
+    t.reps += e.totalReps || 0;
+    t.kg += e.totalKg || 0;
+  });
+  t.kg = histRound1(t.kg);
+  return t;
+}
+
+function histFormatKg(kg) {
+  if (kg >= 10000) return histRound1(kg / 1000) + ' t';
+  return Math.round(kg) + ' kg';
+}
+
+function histFormatWhen(ms) {
+  var d = new Date(ms);
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var day = new Date(ms); day.setHours(0, 0, 0, 0);
+  var diffDays = Math.round((today.getTime() - day.getTime()) / 86400000);
+  var hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  if (diffDays === 0) return "Aujourd'hui " + hm;
+  if (diffDays === 1) return 'Hier ' + hm;
+  return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + (d.getFullYear() !== today.getFullYear() ? '/' + d.getFullYear() : '') + ' ' + hm;
+}
+
+// --- Écran ---
+
+function showWorkoutHistory(origin) {
+  histOrigin = origin || 'screen-sport-home';
+  histSelectMode = false;
+  histSelected = {};
+  renderHistory();
+  show('screen-workout-history');
+}
+
+function histGoBack() {
+  if (histOrigin === 'screen-workouts') { showWorkouts(); return; }
+  show(histOrigin);
+}
+
+// Bandeau « Historique » de l'écran My Workouts : activité des 7 derniers jours.
+function renderWorkoutsHistBanner() {
+  var banner = document.getElementById('workouts-hist-banner');
+  if (!banner) return;
+  var all = histLoad();
+  if (!all.length) { banner.classList.add('hidden'); return; }
+  var week = histTotals(histFilter(all, '7'));
+  var sub;
+  if (week.count === 0) {
+    sub = 'Rien cette semaine · ' + all.length + (all.length > 1 ? ' séances au total' : ' séance au total');
+  } else {
+    sub = week.count + (week.count > 1 ? ' séances' : ' séance') + ' sur 7 jours';
+    if (week.secs > 0) sub += ' · ' + formatTotalDuration(week.secs);
+    if (week.reps > 0) sub += ' · ' + week.reps + (week.reps > 1 ? ' reps' : ' rep');
+  }
+  document.getElementById('workouts-hist-sub').textContent = sub;
+  banner.classList.remove('hidden');
+}
+
+function setHistRange(range) {
+  histRange = range;
+  renderHistory();
+}
+
+function toggleHistSelectMode() {
+  histSelectMode = !histSelectMode;
+  histSelected = {};
+  renderHistory();
+}
+
+function histSelectedIds() {
+  return Object.keys(histSelected).filter(function(id) { return histSelected[id]; });
+}
+
+function toggleHistSelect(id) {
+  if (histSelected[id]) delete histSelected[id]; else histSelected[id] = true;
+  renderHistory();
+}
+
+function histSelectAllVisible() {
+  var all = histVisibleIds.length > 0 && histVisibleIds.every(function(id) { return histSelected[id]; });
+  histSelected = {};
+  if (!all) histVisibleIds.forEach(function(id) { histSelected[id] = true; });
+  renderHistory();
+}
+
+function deleteHistoryEntry(id) {
+  var e = histGet(id);
+  var label = e ? e.workoutName + ' — ' + histFormatWhen(e.startedAt) : 'cet entraînement';
+  if (!confirm('Supprimer ' + label + ' ?')) return;
+  histRemove([id]);
+  delete histSelected[id];
+  renderHistory();
+}
+
+function deleteSelectedHistory() {
+  var ids = histSelectedIds();
+  if (!ids.length) return;
+  var msg = ids.length === 1 ? 'Supprimer cet entraînement ?' : 'Supprimer ces ' + ids.length + ' entraînements ?';
+  if (!confirm(msg)) return;
+  histRemove(ids);
+  histSelected = {};
+  renderHistory();
+}
+
+function histEntryDetail(e) {
+  if (e.mode === 'duo' && e.players) {
+    return e.players.map(function(p) {
+      var txt = escHtml(p.name) + ' ' + p.reps + ' reps';
+      if (p.targetReps > 0) txt += '/' + p.targetReps;
+      if (p.kg > 0) txt += ' · ' + Math.round(p.kg) + 'kg';
+      return '<span class="hist-entry-player" style="color:' + p.color + '">' + txt + '</span>';
+    }).join('');
+  }
+  var cycles = e.cycles || [];
+  if (!cycles.length) return '';
+  var named = cycles.filter(function(c) { return c.name; }).map(function(c) { return escHtml(c.name); });
+  var label = cycles.length + (cycles.length > 1 ? ' cycles' : ' cycle');
+  if (named.length) label += ' · ' + named.join(', ');
+  return '<span class="hist-entry-cycles">' + label + '</span>';
+}
+
+function renderHistory() {
+  var all = histLoad();
+  var list = histFilter(all, histRange).sort(function(a, b) { return (b.startedAt || 0) - (a.startedAt || 0); });
+  histVisibleIds = list.map(function(e) { return e.id; });
+
+  var t = histTotals(list);
+  document.getElementById('hist-stat-count').textContent = t.count;
+  document.getElementById('hist-stat-time').textContent = t.secs > 0 ? formatTotalDuration(t.secs) : '—';
+  document.getElementById('hist-stat-reps').textContent = t.reps;
+  document.getElementById('hist-stat-kg').textContent = t.kg > 0 ? histFormatKg(t.kg) : '—';
+
+  ['7', '30', 'all'].forEach(function(r) {
+    var btn = document.getElementById('hist-range-' + r);
+    if (btn) btn.classList.toggle('active', histRange === r);
+  });
+
+  var selBtn = document.getElementById('hist-select-btn');
+  if (selBtn) {
+    selBtn.textContent = histSelectMode ? 'Terminé' : 'Gérer';
+    selBtn.classList.toggle('hidden', all.length === 0);
+  }
+  var bar = document.getElementById('hist-select-bar');
+  if (bar) bar.classList.toggle('hidden', !histSelectMode);
+  var selIds = histSelectedIds();
+  var delBtn = document.getElementById('hist-delete-btn');
+  if (delBtn) {
+    delBtn.disabled = selIds.length === 0;
+    delBtn.textContent = selIds.length > 0 ? 'Supprimer (' + selIds.length + ')' : 'Supprimer';
+  }
+  var allBtn = document.getElementById('hist-selectall-btn');
+  if (allBtn) {
+    var everything = histVisibleIds.length > 0 && histVisibleIds.every(function(id) { return histSelected[id]; });
+    allBtn.textContent = everything ? 'Tout désélectionner' : 'Tout sélectionner';
+  }
+
+  var empty = document.getElementById('hist-empty');
+  var container = document.getElementById('hist-list');
+  if (!list.length) {
+    container.innerHTML = '';
+    empty.classList.remove('hidden');
+    empty.querySelector('p').textContent = all.length === 0
+      ? 'Aucun entraînement enregistré pour le moment.'
+      : 'Aucun entraînement sur cette période.';
+    return;
+  }
+  empty.classList.add('hidden');
+
+  var html = '';
+  list.forEach(function(e) {
+    var checked = !!histSelected[e.id];
+    var modeBadge = e.mode === 'duo' ? '<span class="mode-badge mode-badge-duo">Duo</span>' : '';
+    var diffBadge = e.difficulty > 0 ? '<span class="diff-badge diff-badge-' + e.difficulty + '">' + DIFF_LABELS[e.difficulty] + '</span>' : '';
+    var pills = '';
+    if (e.totalReps > 0) pills += '<span class="hist-pill">' + e.totalReps + (e.totalReps > 1 ? ' reps' : ' rep') + '</span>';
+    if (e.totalKg > 0) pills += '<span class="hist-pill">' + Math.round(e.totalKg) + ' kg</span>';
+    if (!e.completed) pills += '<span class="hist-pill warn">interrompu</span>';
+
+    html += '<div class="hist-entry' + (checked ? ' selected' : '') + '"' +
+      (histSelectMode ? ' onclick="toggleHistSelect(\'' + e.id + '\')"' : '') + '>';
+    if (histSelectMode) {
+      html += '<span class="hist-check' + (checked ? ' checked' : '') + '">' + (checked ? '✓' : '') + '</span>';
+    }
+    html += '<div class="hist-entry-main">';
+    html += '<div class="hist-entry-top"><span class="hist-entry-name">' + escHtml(e.workoutName) + '</span>' + modeBadge + diffBadge + '</div>';
+    html += '<div class="hist-entry-when">' + histFormatWhen(e.startedAt) + ' · ' + formatTotalDuration(e.durationSecs || 0) + '</div>';
+    if (pills) html += '<div class="hist-entry-pills">' + pills + '</div>';
+    var detail = histEntryDetail(e);
+    if (detail) html += '<div class="hist-entry-detail">' + detail + '</div>';
+    html += '</div>';
+    if (!histSelectMode) {
+      html += '<button class="icon-btn danger" onclick="deleteHistoryEntry(\'' + e.id + '\')" aria-label="Supprimer">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>';
+    }
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// L'accueil affiche la version : on vérifie d'un coup d'œil ce qui est déployé.
+(function() {
+  var el = document.getElementById('app-version');
+  if (el) el.textContent = APP_VERSION;
+})();
