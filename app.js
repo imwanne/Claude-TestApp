@@ -812,6 +812,7 @@ function getWorkout(id) { return loadWorkouts().find(function(w){ return w.id===
 // WORKOUT LIST
 function showWorkouts() { renderWorkouts(); show('screen-workouts'); }
 function renderWorkouts() {
+  renderWorkoutsHistBanner();
   var list = loadWorkouts();
   var ul = document.getElementById('workouts-list');
   var empty = document.getElementById('workouts-empty');
@@ -2147,6 +2148,7 @@ var histRange = 'all';        // '7' | '30' | 'all'
 var histSelectMode = false;
 var histSelected = {};        // id -> true
 var histVisibleIds = [];
+var histOrigin = 'screen-sport-home';
 var sessionStartedAt = 0;
 var sessionRecorded = false;
 var multiSessionStartedAt = 0;
@@ -2317,11 +2319,36 @@ function histFormatWhen(ms) {
 
 // --- Écran ---
 
-function showWorkoutHistory() {
+function showWorkoutHistory(origin) {
+  histOrigin = origin || 'screen-sport-home';
   histSelectMode = false;
   histSelected = {};
   renderHistory();
   show('screen-workout-history');
+}
+
+function histGoBack() {
+  if (histOrigin === 'screen-workouts') { showWorkouts(); return; }
+  show(histOrigin);
+}
+
+// Bandeau « Historique » de l'écran My Workouts : activité des 7 derniers jours.
+function renderWorkoutsHistBanner() {
+  var banner = document.getElementById('workouts-hist-banner');
+  if (!banner) return;
+  var all = histLoad();
+  if (!all.length) { banner.classList.add('hidden'); return; }
+  var week = histTotals(histFilter(all, '7'));
+  var sub;
+  if (week.count === 0) {
+    sub = 'Rien cette semaine · ' + all.length + (all.length > 1 ? ' séances au total' : ' séance au total');
+  } else {
+    sub = week.count + (week.count > 1 ? ' séances' : ' séance') + ' sur 7 jours';
+    if (week.secs > 0) sub += ' · ' + formatTotalDuration(week.secs);
+    if (week.reps > 0) sub += ' · ' + week.reps + (week.reps > 1 ? ' reps' : ' rep');
+  }
+  document.getElementById('workouts-hist-sub').textContent = sub;
+  banner.classList.remove('hidden');
 }
 
 function setHistRange(range) {
