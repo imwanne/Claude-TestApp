@@ -454,3 +454,4 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .hist-banner-title { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; }
 .hist-banner-sub { font-size: 0.76rem; color: #64748b; }
 .hist-banner-arrow { width: 18px; height: 18px; color: #475569; flex-shrink: 0; }
+.app-version { display: inline-block; margin-top: 0.6rem; padding: 0.15rem 0.55rem; border: 1px solid #334155; border-radius: 20px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; color: #64748b; }

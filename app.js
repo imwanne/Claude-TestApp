@@ -1,6 +1,9 @@
 'use strict';
 
 // ROUTER
+// Version affichée sur l'écran d'accueil : à monter à chaque déploiement.
+var APP_VERSION = 'V3.1';
+
 function show(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
@@ -2491,3 +2494,9 @@ function renderHistory() {
   });
   container.innerHTML = html;
 }
+
+// L'accueil affiche la version : on vérifie d'un coup d'œil ce qui est déployé.
+(function() {
+  var el = document.getElementById('app-version');
+  if (el) el.textContent = APP_VERSION;
+})();
